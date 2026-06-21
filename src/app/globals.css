@@ -44,7 +44,7 @@ body {
 
 .footer-blood-gradient {
 	background:
-		radial-gradient(circle at 15% 15%, rgba(255, 255, 255, 0.16), transparent 30%),
-		radial-gradient(circle at 90% 90%, rgba(255, 255, 255, 0.08), transparent 38%),
-		linear-gradient(120deg, #7f0917 0%, #920a1d 40%, #ad1125 100%);
+		radial-gradient(circle at 15% 15%, rgba(255, 255, 255, 0.14), transparent 30%),
+		radial-gradient(circle at 88% 85%, rgba(255, 90, 115, 0.2), transparent 42%),
+		linear-gradient(125deg, #5b0615 0%, #77081a 38%, #8d0b20 72%, #a30f24 100%);
 }
