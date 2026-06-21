@@ -8,7 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import bannerImage from "../../../Assets/Blood.png";
 
 export default function HeroSection() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
 
   return (
     <section className="hero-bg relative overflow-hidden py-16 sm:py-20">
@@ -24,8 +24,8 @@ export default function HeroSection() {
             BloodConnect helps patients, families, and hospitals find verified donors quickly through a clean and modern platform.
           </p>
 
-          <div className="mt-8 flex flex-wrap gap-3">
-            {isAuthenticated ? (
+          <div className="mt-8 flex min-h-11 flex-wrap gap-3">
+            {loading ? null : isAuthenticated ? (
               <Link href="/donation-requests">
                 <Button className="bg-red-600 px-7 font-semibold text-white">Explore Requests</Button>
               </Link>

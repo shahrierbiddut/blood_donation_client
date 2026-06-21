@@ -19,6 +19,23 @@ const STATUS_STYLE = {
   cancelled: "bg-red-100 text-red-600"
 };
 const STATUS_LABEL = { pending: "Pending", inprogress: "In Progress", done: "Done", cancelled: "Cancelled" };
+const PAGE_SIZE = 12;
+
+const filterRequests = (items, filters) => items.filter((item) => {
+  const bloodMatch = filters.bloodGroup === "All" || item.bloodGroup === filters.bloodGroup;
+  const districtMatch = filters.district === "All" || item.district?.toLowerCase().includes(filters.district.toLowerCase());
+  const upazilaMatch = filters.upazila === "All" || item.upazila?.toLowerCase().includes(filters.upazila.toLowerCase());
+  return bloodMatch && districtMatch && upazilaMatch;
+});
+
+const mergeRequests = (apiItems = [], mockItems = []) => {
+  const seen = new Set();
+  return [...apiItems, ...mockItems].filter((item) => {
+    if (!item?._id || seen.has(item._id)) return false;
+    seen.add(item._id);
+    return true;
+  });
+};
 
 function AvatarFallback({ name, avatar }) {
   if (avatar) {
@@ -48,7 +65,7 @@ function RequestCard({ item }) {
     : "—";
 
   return (
-    <div className="flex flex-col gap-4 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm transition hover:shadow-md sm:flex-row sm:items-start sm:justify-between">
+    <div className="flex h-full flex-col rounded-2xl border border-slate-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
       <div className="flex gap-4">
         <div className="shrink-0">
           <AvatarFallback name={item.recipientName} avatar={requester.avatar} />
@@ -93,10 +110,10 @@ function RequestCard({ item }) {
         </div>
       </div>
 
-      <div className="flex shrink-0 items-start sm:ml-4">
+      <div className="mt-5 flex shrink-0 items-start">
         <Link
           href={`/donation-requests/${item._id}`}
-          className="rounded-xl bg-red-600 px-5 py-2 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-red-700 hover:shadow-md"
+          className="w-full rounded-xl bg-red-600 px-5 py-2.5 text-center text-sm font-bold text-white transition hover:bg-red-700 hover:shadow-md"
         >
           View Details
         </Link>
@@ -146,7 +163,7 @@ export default function DonationRequestsPage() {
   const [pagination, setPagination] = useState({ total: 0, page: 1, pages: 1 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [usingMockData, setUsingMockData] = useState(false);
+  const [usingMockData, setUsingMockData] = useState(true);
 
   const [bloodGroup, setBloodGroup] = useState("All");
   const [district, setDistrict] = useState("All");
@@ -169,7 +186,7 @@ export default function DonationRequestsPage() {
   }, []);
 
   useEffect(() => {
-    if (!selectedDistrictId) { setUpazilas([]); return; }
+    if (!selectedDistrictId) return;
     fetch("/location/upazila.json")
       .then((r) => r.json())
       .then((json) => {
@@ -182,49 +199,44 @@ export default function DonationRequestsPage() {
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      setError("");
-      try {
-        const res = await donationService.getAll({ ...applied, page });
-        if (res?.data?.length) {
-          setUsingMockData(false);
-          setRequests(res.data || []);
-          setPagination(res.pagination || { total: 0, page: 1, pages: 1 });
-        } else {
-          const filtered = mockDonationRequests.filter((item) => {
-            const bloodMatch = applied.bloodGroup === "All" || item.bloodGroup === applied.bloodGroup;
-            const districtMatch = applied.district === "All" || item.district.toLowerCase().includes(applied.district.toLowerCase());
-            const upazilaMatch = applied.upazila === "All" || item.upazila.toLowerCase().includes(applied.upazila.toLowerCase());
-            return bloodMatch && districtMatch && upazilaMatch;
-          });
-          const limit = 6;
-          const start = (page - 1) * limit;
-          const paged = filtered.slice(start, start + limit);
-          setUsingMockData(true);
-          setRequests(paged);
-          setPagination({
-            total: filtered.length,
-            page,
-            pages: Math.max(1, Math.ceil(filtered.length / limit)),
-            limit
-          });
-        }
+        setError("");
+        try {
+          const res = await donationService.getAll({ ...applied, page: 1, limit: 100 });
+          if (res?.success) {
+            const combined = filterRequests(mergeRequests(res.data || [], mockDonationRequests), applied);
+            const start = (page - 1) * PAGE_SIZE;
+            setUsingMockData(true);
+            setRequests(combined.slice(start, start + PAGE_SIZE));
+            setPagination({
+              total: combined.length,
+              page,
+              pages: Math.max(1, Math.ceil(combined.length / PAGE_SIZE)),
+              limit: PAGE_SIZE
+            });
+          } else {
+            const filtered = filterRequests(mockDonationRequests, applied);
+            const start = (page - 1) * PAGE_SIZE;
+            const paged = filtered.slice(start, start + PAGE_SIZE);
+            setUsingMockData(true);
+            setRequests(paged);
+            setPagination({
+              total: filtered.length,
+              page,
+              pages: Math.max(1, Math.ceil(filtered.length / PAGE_SIZE)),
+              limit: PAGE_SIZE
+            });
+          }
       } catch {
-        const filtered = mockDonationRequests.filter((item) => {
-          const bloodMatch = applied.bloodGroup === "All" || item.bloodGroup === applied.bloodGroup;
-          const districtMatch = applied.district === "All" || item.district.toLowerCase().includes(applied.district.toLowerCase());
-          const upazilaMatch = applied.upazila === "All" || item.upazila.toLowerCase().includes(applied.upazila.toLowerCase());
-          return bloodMatch && districtMatch && upazilaMatch;
-        });
-        const limit = 6;
-        const start = (page - 1) * limit;
-        const paged = filtered.slice(start, start + limit);
+        const filtered = filterRequests(mockDonationRequests, applied);
+        const start = (page - 1) * PAGE_SIZE;
+        const paged = filtered.slice(start, start + PAGE_SIZE);
         setUsingMockData(true);
         setRequests(paged);
         setPagination({
           total: filtered.length,
           page,
-          pages: Math.max(1, Math.ceil(filtered.length / limit)),
-          limit
+          pages: Math.max(1, Math.ceil(filtered.length / PAGE_SIZE)),
+          limit: PAGE_SIZE
         });
         setError("");
       } finally {
@@ -243,6 +255,7 @@ export default function DonationRequestsPage() {
     const selected = districts.find((d) => d.name === e.target.value);
     setDistrict(e.target.value);
     setSelectedDistrictId(selected ? selected.id : "");
+    if (!selected) setUpazilas([]);
     setUpazila("All");
   };
 
@@ -334,9 +347,9 @@ export default function DonationRequestsPage() {
                   Showing <strong>{requests.length}</strong> of <strong>{pagination.total}</strong> results
                 </p>
                 {usingMockData && (
-                  <p className="mb-4 text-xs font-medium text-amber-600">Showing demo requests (mock data).</p>
+                  <p className="mb-4 text-xs font-medium text-amber-600">Showing saved requests with demo requests.</p>
                 )}
-                <div className="flex flex-col gap-4">
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                   {requests.map((item) => (
                     <RequestCard key={item._id} item={item} />
                   ))}

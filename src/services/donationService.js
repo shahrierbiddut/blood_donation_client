@@ -1,8 +1,8 @@
 import api from "./api";
 
 const donationService = {
-  getAll: async ({ bloodGroup = "", district = "", upazila = "", page = 1 } = {}) => {
-    const params = new URLSearchParams({ page });
+  getAll: async ({ bloodGroup = "", district = "", upazila = "", page = 1, limit = 100 } = {}) => {
+    const params = new URLSearchParams({ page, limit });
     if (bloodGroup && bloodGroup !== "All") params.append("bloodGroup", bloodGroup);
     if (district && district !== "All") params.append("district", district);
     if (upazila && upazila !== "All") params.append("upazila", upazila);
@@ -33,6 +33,20 @@ const donationService = {
   update: async (id, payload) => {
     const response = await api.put(`/donations/${id}`, payload);
     return response.data;
+  },
+
+  accept: async (id) => {
+    try {
+      const response = await api.post(`/donations/${id}/donate`);
+      return response.data;
+    } catch (error) {
+      if (error.response?.status !== 404) {
+        throw error.response?.data || error;
+      }
+
+      const response = await api.put(`/donations/${id}`, { status: "inprogress" });
+      return response.data;
+    }
   },
 
   remove: async (id) => {

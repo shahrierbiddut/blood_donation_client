@@ -59,7 +59,7 @@ function CreateRequestContent() {
   }, []);
 
   useEffect(() => {
-    if (!selectedDistrictId) { setUpazilas([]); return; }
+    if (!selectedDistrictId) return;
     fetch("/location/upazila.json")
       .then((r) => r.json())
       .then((json) => {
@@ -79,6 +79,7 @@ function CreateRequestContent() {
     const selected = districts.find((d) => d.name === val);
     setForm((prev) => ({ ...prev, district: val, upazila: "" }));
     setSelectedDistrictId(selected ? selected.id : "");
+    if (!selected) setUpazilas([]);
   };
 
   const validate = () => {

@@ -4,24 +4,44 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { FiMapPin, FiCalendar, FiClock, FiPhone, FiMail } from "react-icons/fi";
+import { FiAlertCircle, FiCalendar, FiClock, FiDroplet, FiMapPin } from "react-icons/fi";
 import Navbar from "@/Components/Shared/Navbar";
 import Footer from "@/Components/Shared/Footer";
 import donationService from "@/services/donationService";
 import mockDonationRequests from "@/data/mockDonationRequests";
+import { useAuth } from "@/context/AuthContext";
 
 const statusClass = {
-  pending: "bg-slate-100 text-slate-700",
-  inprogress: "bg-amber-100 text-amber-700",
+  pending: "bg-amber-100 text-amber-800",
+  inprogress: "bg-sky-100 text-sky-800",
   done: "bg-emerald-100 text-emerald-700",
   cancelled: "bg-red-100 text-red-600"
 };
+const statusLabel = {
+  pending: "Pending",
+  inprogress: "In Progress",
+  done: "Done",
+  cancelled: "Cancelled"
+};
+
+function DetailRow({ label, value }) {
+  return (
+    <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+      <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">{label}</p>
+      <p className="mt-1 text-sm font-bold text-slate-800">{value || "Not provided"}</p>
+    </div>
+  );
+}
 
 export default function DonationRequestDetailsPage() {
   const params = useParams();
   const router = useRouter();
+  const { user, isAuthenticated } = useAuth();
   const [request, setRequest] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionError, setActionError] = useState("");
+  const [toast, setToast] = useState({ type: "", message: "", visible: false });
 
   const id = useMemo(() => params?.id, [params]);
 
@@ -52,73 +72,173 @@ export default function DonationRequestDetailsPage() {
     return <div className="min-h-screen grid place-items-center text-red-500">Request not found</div>;
   }
 
+  const formattedDate = request.donationDate
+    ? new Date(request.donationDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+    : "Not provided";
+  const location = [request.district, request.upazila].filter(Boolean).join(", ");
+  const requester = request.requester || {};
+  const isOwner = user?._id && requester?._id && user._id === requester._id;
+  const canDonate = request.status === "pending" && !isOwner;
+
+  const showToast = (type, message) => {
+    setToast({ type, message, visible: true });
+    setTimeout(() => {
+      setToast({ type: "", message: "", visible: false });
+    }, 2600);
+  };
+
+  const handleDonate = async () => {
+    if (!isAuthenticated) {
+      showToast("error", "Please login before accepting a donation request.");
+      router.push("/login");
+      return;
+    }
+
+    if (!request?._id) {
+      showToast("error", "Request id is missing. Please refresh and try again.");
+      return;
+    }
+
+    if (String(request._id).startsWith("mock-")) {
+      setRequest((prev) => ({ ...prev, status: "inprogress" }));
+      showToast("success", "Demo request accepted. Status changed to in progress.");
+      return;
+    }
+
+    setActionLoading(true);
+    setActionError("");
+    try {
+      const res = await donationService.accept(request._id);
+      if (res.success && res.data) {
+        setRequest(res.data);
+        showToast("success", "Donation accepted. Status changed to in progress.");
+      } else {
+        const message = res?.message || "Unable to accept this request.";
+        setActionError(message);
+        showToast("error", message);
+      }
+    } catch (error) {
+      const message = error.message || error.response?.data?.message || "Unable to accept this request.";
+      setActionError(message);
+      showToast("error", message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50">
+      {toast.visible ? (
+        <div className={`fixed right-4 top-4 z-50 rounded-xl border px-4 py-3 text-sm font-bold shadow-lg ${
+          toast.type === "success"
+            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+            : "border-red-200 bg-red-50 text-red-700"
+        }`}>
+          {toast.message}
+        </div>
+      ) : null}
       <Navbar />
-      <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-4 text-xs text-slate-400">
-          <Link href="/dashboard" className="hover:text-red-600">Dashboard</Link> / <Link href="/dashboard/my-requests" className="hover:text-red-600">My Requests</Link> / <span className="text-slate-600">Details</span>
+      <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-5 text-xs text-slate-400">
+          <Link href="/" className="hover:text-red-600">Home</Link> / <Link href="/donation-requests" className="hover:text-red-600">Donation Requests</Link> / <span className="text-slate-600">Details</span>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
-          <section className="rounded-2xl border border-slate-100 bg-white shadow-sm">
-            <div className="border-b border-slate-100 p-5">
-              <div className="flex items-center gap-3">
+        <section className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+          <div className="flex flex-col gap-5 border-b border-slate-100 bg-white p-6 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-3xl font-black text-slate-900">
+                Request <span className="text-red-600">Details</span>
+              </h1>
+              <p className="mt-1 text-sm text-slate-500">View urgency, location, and donation requirements.</p>
+            </div>
+            <span className={`inline-flex w-fit items-center gap-2 rounded-full px-4 py-2 text-xs font-black uppercase ${statusClass[request.status] || statusClass.pending}`}>
+              <FiClock /> {statusLabel[request.status] || request.status}
+            </span>
+          </div>
+
+          <div className="grid gap-0 lg:grid-cols-[1fr_340px]">
+            <div className="p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                 {request.requester?.avatar ? (
-                  <Image src={request.requester.avatar} alt={request.recipientName} width={56} height={56} className="h-14 w-14 rounded-full object-cover" unoptimized />
+                  <Image src={request.requester.avatar} alt={request.recipientName} width={72} height={72} className="h-20 w-20 rounded-full object-cover" unoptimized />
                 ) : (
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-100 font-black text-red-600">{request.recipientName?.charAt(0) || "R"}</div>
+                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-red-100 text-2xl font-black text-red-600">{request.recipientName?.charAt(0) || "R"}</div>
                 )}
                 <div>
-                  <h1 className="text-xl font-black text-slate-900">{request.recipientName}</h1>
-                  <div className="mt-1 inline-flex rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-700">{request.bloodGroup}</div>
-                </div>
-              </div>
-              <p className="mt-3 flex items-center gap-2 text-sm text-slate-500"><FiMapPin /> {request.district}, {request.upazila}</p>
-              <p className="mt-1 text-sm text-slate-500">{request.hospitalName}</p>
-            </div>
-
-            <div className="space-y-3 p-5 text-sm">
-              <div className="flex justify-between"><span className="text-slate-500">Donation Date</span><span className="font-semibold text-slate-800">{new Date(request.donationDate).toLocaleDateString()}</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">Donation Time</span><span className="font-semibold text-slate-800">{request.donationTime}</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">Blood Group</span><span className="font-semibold text-slate-800">{request.bloodGroup}</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">Status</span><span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusClass[request.status] || statusClass.pending}`}>{request.status}</span></div>
-              <div>
-                <p className="mb-1 text-slate-500">Message</p>
-                <p className="font-medium text-slate-800">{request.requestMessage || "No additional message."}</p>
-              </div>
-            </div>
-          </section>
-
-          <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-            <h2 className="text-xl font-black text-slate-900">Donor Information</h2>
-            {request.donor ? (
-              <div className="mt-4 rounded-xl border border-slate-100 p-4">
-                <div className="flex items-center gap-3">
-                  {request.donor.avatar ? (
-                    <Image src={request.donor.avatar} alt={request.donor.name} width={52} height={52} className="h-13 w-13 rounded-full object-cover" unoptimized />
-                  ) : (
-                    <div className="flex h-13 w-13 items-center justify-center rounded-full bg-emerald-100 font-black text-emerald-700">{request.donor.name?.charAt(0) || "D"}</div>
-                  )}
-                  <div>
-                    <p className="font-bold text-slate-900">{request.donor.name}</p>
-                    <p className="text-xs text-slate-500 flex items-center gap-1"><FiMail /> {request.donor.email}</p>
-                    <p className="text-xs text-slate-500 flex items-center gap-1"><FiPhone /> 01712-345678</p>
-                    <p className="text-xs text-slate-500 flex items-center gap-1"><FiMapPin /> {request.district}, {request.upazila}</p>
+                  <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Recipient</p>
+                  <h2 className="text-2xl font-black text-slate-900">{request.recipientName}</h2>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-red-600 px-3 py-1 text-xs font-black text-white">
+                      <FiDroplet /> {request.bloodGroup}
+                    </span>
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
+                      Requested by {requester.name || "a registered member"}
+                    </span>
                   </div>
                 </div>
               </div>
-            ) : (
-              <p className="mt-4 rounded-xl bg-slate-50 p-3 text-sm text-slate-500">No donor assigned yet.</p>
-            )}
 
-            <div className="mt-6 space-y-2">
-              <button className="w-full rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white">Mark as Done</button>
-              <button className="w-full rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-bold text-white">Cancel Request</button>
-              <button onClick={() => router.push(`/dashboard/edit-request/${request._id}`)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700">Edit Request</button>
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                <DetailRow label="Donation Date" value={formattedDate} />
+                <DetailRow label="Donation Time" value={request.donationTime} />
+                <DetailRow label="Blood Group" value={request.bloodGroup} />
+                <DetailRow label="Hospital" value={request.hospitalName} />
+                <DetailRow label="District" value={request.district} />
+                <DetailRow label="Upazila" value={request.upazila} />
+              </div>
+
+              <div className="mt-5 rounded-2xl border border-red-100 bg-red-50 p-5">
+                <p className="text-xs font-bold uppercase tracking-wide text-red-500">Requester Message</p>
+                <p className="mt-2 text-sm font-medium leading-6 text-slate-800">{request.requestMessage || "No additional message."}</p>
+              </div>
             </div>
-          </section>
-        </div>
+
+            <aside className="border-t border-slate-100 bg-slate-50 p-6 lg:border-l lg:border-t-0">
+              <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Current Status</p>
+                <p className={`mt-3 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-black uppercase ${statusClass[request.status] || statusClass.pending}`}>
+                  <FiClock /> {statusLabel[request.status] || request.status}
+                </p>
+                <p className="mt-4 text-sm leading-6 text-slate-600">
+                  {request.status === "pending"
+                    ? "No donor has accepted this request yet. Tap Donate to accept it."
+                    : "This request is now in progress and no longer appears on the donation requests page."}
+                </p>
+              </div>
+
+              <div className="mt-4 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                <p className="flex items-start gap-2 text-sm font-semibold text-slate-700">
+                  <FiMapPin className="mt-0.5 shrink-0 text-red-500" /> {location || "Location not provided"}
+                </p>
+                <p className="mt-3 flex items-center gap-2 text-sm font-semibold text-slate-700">
+                  <FiCalendar className="text-red-500" /> {formattedDate}
+                </p>
+                <p className="mt-3 flex items-center gap-2 text-sm font-semibold text-slate-700">
+                  <FiClock className="text-red-500" /> {request.donationTime || "Not provided"}
+                </p>
+              </div>
+
+              {actionError ? (
+                <div className="mt-4 flex gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+                  <FiAlertCircle className="mt-0.5 shrink-0" /> {actionError}
+                </div>
+              ) : null}
+
+              <button
+                onClick={handleDonate}
+                disabled={!canDonate || actionLoading}
+                className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-black text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
+              >
+                <FiDroplet />
+                {actionLoading ? "Processing..." : request.status === "pending" ? "Donate" : "Donation In Progress"}
+              </button>
+
+              {isOwner ? (
+                <p className="mt-3 text-center text-xs font-semibold text-slate-500">You cannot donate to your own request.</p>
+              ) : null}
+            </aside>
+          </div>
+        </section>
       </main>
       <Footer />
     </div>
