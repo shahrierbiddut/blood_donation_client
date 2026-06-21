@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@heroui/react";
+import { FiArrowRight, FiSearch } from "react-icons/fi";
 import { useAuth } from "@/context/AuthContext";
 import bannerImage from "../../../Assets/Blood.png";
 
@@ -13,9 +14,9 @@ export default function HeroSection() {
     <section className="hero-bg relative overflow-hidden py-16 sm:py-20">
       <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
         <div>
-          <span className="inline-flex rounded-full bg-red-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-red-700">
+          {/* <span className="inline-flex rounded-full bg-red-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-red-700">
             Save Lives Faster
-          </span>
+          </span> */}
           <h1 className="mt-5 text-4xl font-extrabold leading-tight text-slate-900 sm:text-5xl">
             Donate blood and become someone&apos;s miracle today.
           </h1>
@@ -31,11 +32,22 @@ export default function HeroSection() {
             ) : (
               <>
                 <Link href="/register">
-                  <Button className="bg-red-600 px-7 font-semibold text-white">Become a Donor</Button>
+                  <Button className="h-11 rounded-xl bg-red-600 px-7 font-semibold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-red-700">
+                    <span className="inline-flex items-center gap-2">
+                      <FiArrowRight aria-hidden="true" className="text-base" />
+                      Become a Donor
+                    </span>
+                  </Button>
                 </Link>
                 <Link href="/login">
-                  <Button variant="bordered" className="border-red-300 px-7 font-semibold text-red-600">
-                    Login
+                  <Button
+                    variant="bordered"
+                    className="h-11 rounded-xl border-red-300 bg-white px-7 font-semibold text-red-600 shadow-sm transition hover:-translate-y-0.5 hover:border-red-500 hover:bg-red-50"
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <FiSearch aria-hidden="true" className="text-base" />
+                      Search Donors
+                    </span>
                   </Button>
                 </Link>
               </>

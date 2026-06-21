@@ -59,7 +59,7 @@ export default function ContactSection() {
             />
             <TextArea
               label="Message"
-              minRows={4}
+              rows={4}
               placeholder="How can we help you?"
               value={form.message}
               onChange={(e) => setForm((prev) => ({ ...prev, message: e.target.value }))}
