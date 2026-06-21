@@ -8,6 +8,7 @@ import { HiOutlineBuildingOffice2 } from "react-icons/hi2";
 import Navbar from "@/Components/Shared/Navbar";
 import Footer from "@/Components/Shared/Footer";
 import donationService from "@/services/donationService";
+import mockDonationRequests from "@/data/mockDonationRequests";
 
 const BLOOD_GROUPS = ["All", "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
@@ -49,7 +50,7 @@ function RequestCard({ item }) {
   return (
     <div className="flex flex-col gap-4 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm transition hover:shadow-md sm:flex-row sm:items-start sm:justify-between">
       <div className="flex gap-4">
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           <AvatarFallback name={item.recipientName} avatar={requester.avatar} />
         </div>
         <div className="min-w-0">
@@ -92,7 +93,7 @@ function RequestCard({ item }) {
         </div>
       </div>
 
-      <div className="flex flex-shrink-0 items-start sm:ml-4">
+      <div className="flex shrink-0 items-start sm:ml-4">
         <Link
           href={`/donation-requests/${item._id}`}
           className="rounded-xl bg-red-600 px-5 py-2 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-red-700 hover:shadow-md"
@@ -145,6 +146,7 @@ export default function DonationRequestsPage() {
   const [pagination, setPagination] = useState({ total: 0, page: 1, pages: 1 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [usingMockData, setUsingMockData] = useState(false);
 
   const [bloodGroup, setBloodGroup] = useState("All");
   const [district, setDistrict] = useState("All");
@@ -183,10 +185,48 @@ export default function DonationRequestsPage() {
       setError("");
       try {
         const res = await donationService.getAll({ ...applied, page });
-        setRequests(res.data || []);
-        setPagination(res.pagination || { total: 0, page: 1, pages: 1 });
+        if (res?.data?.length) {
+          setUsingMockData(false);
+          setRequests(res.data || []);
+          setPagination(res.pagination || { total: 0, page: 1, pages: 1 });
+        } else {
+          const filtered = mockDonationRequests.filter((item) => {
+            const bloodMatch = applied.bloodGroup === "All" || item.bloodGroup === applied.bloodGroup;
+            const districtMatch = applied.district === "All" || item.district.toLowerCase().includes(applied.district.toLowerCase());
+            const upazilaMatch = applied.upazila === "All" || item.upazila.toLowerCase().includes(applied.upazila.toLowerCase());
+            return bloodMatch && districtMatch && upazilaMatch;
+          });
+          const limit = 6;
+          const start = (page - 1) * limit;
+          const paged = filtered.slice(start, start + limit);
+          setUsingMockData(true);
+          setRequests(paged);
+          setPagination({
+            total: filtered.length,
+            page,
+            pages: Math.max(1, Math.ceil(filtered.length / limit)),
+            limit
+          });
+        }
       } catch {
-        setError("Failed to load donation requests. Please try again.");
+        const filtered = mockDonationRequests.filter((item) => {
+          const bloodMatch = applied.bloodGroup === "All" || item.bloodGroup === applied.bloodGroup;
+          const districtMatch = applied.district === "All" || item.district.toLowerCase().includes(applied.district.toLowerCase());
+          const upazilaMatch = applied.upazila === "All" || item.upazila.toLowerCase().includes(applied.upazila.toLowerCase());
+          return bloodMatch && districtMatch && upazilaMatch;
+        });
+        const limit = 6;
+        const start = (page - 1) * limit;
+        const paged = filtered.slice(start, start + limit);
+        setUsingMockData(true);
+        setRequests(paged);
+        setPagination({
+          total: filtered.length,
+          page,
+          pages: Math.max(1, Math.ceil(filtered.length / limit)),
+          limit
+        });
+        setError("");
       } finally {
         setLoading(false);
       }
@@ -243,7 +283,7 @@ export default function DonationRequestsPage() {
                 <select
                   value={district}
                   onChange={handleDistrictChange}
-                  className="h-10 min-w-[160px] rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-red-400"
+                  className="h-10 min-w-40 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-red-400"
                 >
                   <option value="All">All</option>
                   {districts.map((d) => <option key={d.id} value={d.name}>{d.name}</option>)}
@@ -256,7 +296,7 @@ export default function DonationRequestsPage() {
                   value={upazila}
                   onChange={(e) => setUpazila(e.target.value)}
                   disabled={!selectedDistrictId}
-                  className="h-10 min-w-[160px] rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-red-400 disabled:bg-slate-100 disabled:text-slate-400"
+                  className="h-10 min-w-40 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-red-400 disabled:bg-slate-100 disabled:text-slate-400"
                 >
                   <option value="All">All</option>
                   {upazilas.map((u) => <option key={u.id} value={u.name}>{u.name}</option>)}
@@ -293,6 +333,9 @@ export default function DonationRequestsPage() {
                 <p className="mb-4 text-sm text-slate-500">
                   Showing <strong>{requests.length}</strong> of <strong>{pagination.total}</strong> results
                 </p>
+                {usingMockData && (
+                  <p className="mb-4 text-xs font-medium text-amber-600">Showing demo requests (mock data).</p>
+                )}
                 <div className="flex flex-col gap-4">
                   {requests.map((item) => (
                     <RequestCard key={item._id} item={item} />

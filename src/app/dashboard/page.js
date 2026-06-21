@@ -1,18 +1,31 @@
 // src/app/dashboard/page.js
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  FiDroplet, FiCheckCircle, FiXCircle, FiClock,
-  FiEye, FiEdit2, FiTrash2, FiPlusCircle, FiHome,
-  FiList, FiUser, FiSettings
+  FiDroplet,
+  FiCheckCircle,
+  FiXCircle,
+  FiClock,
+  FiEye,
+  FiEdit2,
+  FiTrash2,
+  FiPlusCircle,
+  FiHome,
+  FiList,
+  FiSearch,
+  FiDollarSign,
+  FiUser,
+  FiSettings
 } from "react-icons/fi";
 import { useAuth } from "@/context/AuthContext";
 import ProtectedRoute from "@/Components/ProtectedRoute";
 import Navbar from "@/Components/Shared/Navbar";
 import Footer from "@/Components/Shared/Footer";
 import donationService from "@/services/donationService";
+import mockDonationRequests from "@/data/mockDonationRequests";
 
 const STATUS_STYLE = {
   pending:    "bg-slate-100 text-slate-600",
@@ -36,23 +49,50 @@ const STAT_CARDS = [
 
 function DashboardContent() {
   const { user } = useAuth();
-  const [stats, setStats]               = useState({ total: 0, inprogress: 0, done: 0, cancelled: 0 });
-  const [recentRequests, setRecent]     = useState([]);
-  const [loading, setLoading]           = useState(true);
-  const [deleteId, setDeleteId]         = useState(null);
+  const [stats, setStats] = useState({ total: 0, inprogress: 0, done: 0, cancelled: 0 });
+  const [recentRequests, setRecent] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [deleteId, setDeleteId] = useState(null);
 
   const name = user?.name || user?.email?.split("@")[0] || "User";
   const role = user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "Donor";
+  const sidebarItems = useMemo(
+    () => [
+      { href: "/dashboard", icon: FiHome, label: "Dashboard" },
+      { href: "/dashboard/my-requests", icon: FiList, label: "My Requests" },
+      { href: "/search-donors", icon: FiSearch, label: "Search Donors" },
+      { href: "/dashboard/my-funding", icon: FiDollarSign, label: "My Funding" },
+      { href: "/dashboard/profile", icon: FiUser, label: "Profile" },
+      { href: "/dashboard/settings", icon: FiSettings, label: "Settings" },
+      { href: "/dashboard/create-request", icon: FiPlusCircle, label: "Create Request" }
+    ],
+    []
+  );
+
+  const toStats = (items) => ({
+    total: items.length,
+    inprogress: items.filter((r) => r.status === "inprogress").length,
+    done: items.filter((r) => r.status === "done").length,
+    cancelled: items.filter((r) => r.status === "cancelled").length
+  });
 
   useEffect(() => {
     (async () => {
       try {
         const res = await donationService.getStats();
-        if (res.success) {
+        if (res.success && res.data?.recentRequests?.length) {
           setStats(res.data.stats);
           setRecent(res.data.recentRequests);
+        } else {
+          setRecent(mockDonationRequests.slice(0, 10));
+          setStats(toStats(mockDonationRequests));
         }
-      } catch { /* silent */ } finally { setLoading(false); }
+      } catch {
+        setRecent(mockDonationRequests.slice(0, 10));
+        setStats(toStats(mockDonationRequests));
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []);
 
@@ -67,8 +107,7 @@ function DashboardContent() {
     finally { setDeleteId(null); }
   };
 
-  const fmtDate = (d) =>
-    d ? new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "—";
+  const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "—");
 
   return (
     <div className="min-h-screen bg-[#f8f9fc]">
@@ -76,26 +115,31 @@ function DashboardContent() {
 
       <div className="mx-auto flex w-full max-w-7xl gap-6 px-4 py-8 sm:px-6 lg:px-8">
         {/* ─── Sidebar ─── */}
-        <aside className="hidden w-56 flex-shrink-0 lg:block">
+        <aside className="hidden w-60 shrink-0 lg:block">
           <div className="sticky top-24 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
-            {/* Profile mini */}
             <div className="bg-linear-to-b from-red-600 to-red-500 px-4 py-5 text-center text-white">
-              <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-white/20 text-2xl font-black text-white ring-2 ring-white/40">
-                {name.charAt(0).toUpperCase()}
-              </div>
+              {user?.avatar ? (
+                <Image
+                  src={user.avatar}
+                  alt={name}
+                  width={72}
+                  height={72}
+                  className="mx-auto mb-2 h-18 w-18 rounded-full object-cover ring-2 ring-white/50"
+                  unoptimized
+                />
+              ) : (
+                <div className="mx-auto mb-2 flex h-18 w-18 items-center justify-center rounded-full bg-white/20 text-2xl font-black text-white ring-2 ring-white/40">
+                  {name.charAt(0).toUpperCase()}
+                </div>
+              )}
               <p className="truncate text-sm font-bold">{name}</p>
               <span className="mt-1 inline-block rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-semibold capitalize">
                 {role}
               </span>
             </div>
 
-            {/* Nav links */}
             <nav className="p-3">
-              {[
-                { href: "/dashboard",               icon: FiHome,       label: "Dashboard" },
-                { href: "/dashboard/create-request",icon: FiPlusCircle, label: "Create Request" },
-                { href: "/donation-requests",        icon: FiList,       label: "All Requests" },
-              ].map(({ href, icon: Icon, label }) => (
+              {sidebarItems.map(({ href, icon: Icon, label }) => (
                 <Link
                   key={href}
                   href={href}
