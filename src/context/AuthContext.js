@@ -100,6 +100,22 @@ export const AuthProvider = ({ children }) => {
     setUser({ ...user, ...userData });
   };
 
+  const updateProfile = async (profileData) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await authService.updateProfile(profileData);
+      setUser(response.user);
+      return response;
+    } catch (err) {
+      const errorMessage = err.message || "Profile update failed";
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   /**
    * Clear error
    */
@@ -115,6 +131,7 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     updateUser,
+    updateProfile,
     clearError,
     isAuthenticated: !!user
   };

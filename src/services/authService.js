@@ -66,6 +66,18 @@ const authService = {
   },
 
   /**
+   * Update current user profile. Email is intentionally not editable.
+   */
+  updateProfile: async (profileData) => {
+    try {
+      const response = await api.put("/auth/profile", profileData);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  /**
    * Refresh access token
    */
   refresh: async (refreshToken) => {

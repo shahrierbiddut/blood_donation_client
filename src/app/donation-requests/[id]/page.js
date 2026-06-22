@@ -23,6 +23,18 @@ const statusLabel = {
   done: "Done",
   cancelled: "Cancelled"
 };
+const statusDescription = {
+  pending: "No donor has accepted this request yet. Tap Donate to accept it.",
+  inprogress: "This request is now in progress and no longer appears on the donation requests page.",
+  done: "This donation has been completed. Thank you for saving a life.",
+  cancelled: "This request has been cancelled."
+};
+const actionLabel = {
+  pending: "Donate",
+  inprogress: "Donation In Progress",
+  done: "Donation Completed",
+  cancelled: "Request Cancelled"
+};
 
 function DetailRow({ label, value }) {
   return (
@@ -200,9 +212,7 @@ export default function DonationRequestDetailsPage() {
                   <FiClock /> {statusLabel[request.status] || request.status}
                 </p>
                 <p className="mt-4 text-sm leading-6 text-slate-600">
-                  {request.status === "pending"
-                    ? "No donor has accepted this request yet. Tap Donate to accept it."
-                    : "This request is now in progress and no longer appears on the donation requests page."}
+                  {statusDescription[request.status] || statusDescription.pending}
                 </p>
               </div>
 
@@ -230,7 +240,7 @@ export default function DonationRequestDetailsPage() {
                 className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-black text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
               >
                 <FiDroplet />
-                {actionLoading ? "Processing..." : request.status === "pending" ? "Donate" : "Donation In Progress"}
+                {actionLoading ? "Processing..." : actionLabel[request.status] || "Donation In Progress"}
               </button>
 
               {isOwner ? (

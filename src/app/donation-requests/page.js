@@ -22,6 +22,7 @@ const STATUS_LABEL = { pending: "Pending", inprogress: "In Progress", done: "Don
 const PAGE_SIZE = 12;
 
 const filterRequests = (items, filters) => items.filter((item) => {
+  if (item.status !== "pending") return false;
   const bloodMatch = filters.bloodGroup === "All" || item.bloodGroup === filters.bloodGroup;
   const districtMatch = filters.district === "All" || item.district?.toLowerCase().includes(filters.district.toLowerCase());
   const upazilaMatch = filters.upazila === "All" || item.upazila?.toLowerCase().includes(filters.upazila.toLowerCase());
@@ -43,15 +44,15 @@ function AvatarFallback({ name, avatar }) {
       <Image
         src={avatar}
         alt={name || "Requester"}
-        width={56}
-        height={56}
-        className="h-14 w-14 rounded-full object-cover"
+        width={58}
+        height={58}
+        className="h-14 w-14 rounded-full object-cover ring-2 ring-white"
         unoptimized
       />
     );
   }
   return (
-    <span className="flex h-14 w-14 items-center justify-center rounded-full bg-red-100 text-xl font-black text-red-600">
+    <span className="flex h-14 w-14 items-center justify-center rounded-full bg-red-100 text-xl font-black text-red-600 ring-2 ring-white">
       {name ? name.charAt(0).toUpperCase() : "?"}
     </span>
   );
@@ -65,55 +66,55 @@ function RequestCard({ item }) {
     : "—";
 
   return (
-    <div className="flex min-h-[206px] h-full flex-col rounded-2xl border border-slate-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+    <div className="flex min-h-[255px] h-full flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(15,23,42,0.12)]">
       <div className="flex flex-1 gap-4">
         <div className="shrink-0">
           <AvatarFallback name={item.recipientName} avatar={requester.avatar} />
         </div>
         <div className="flex min-w-0 flex-1 flex-col">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-base font-bold text-slate-900">{item.recipientName}</h3>
-            <span className="rounded-full bg-red-600 px-2.5 py-0.5 text-xs font-black text-white">{item.bloodGroup}</span>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <h3 className="text-base font-black text-slate-950">{item.recipientName}</h3>
+            <span className="rounded-full bg-red-600 px-2.5 py-0.5 text-[11px] font-black text-white">{item.bloodGroup}</span>
             {item.status && (
-              <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_STYLE[item.status] || STATUS_STYLE.pending}`}>
+              <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_STYLE[item.status] || STATUS_STYLE.pending}`}>
                 {STATUS_LABEL[item.status] || item.status}
               </span>
             )}
           </div>
 
-          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500">
+          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-slate-600">
             {location && (
               <span className="flex items-center gap-1">
-                <FiMapPin className="text-red-400" /> {location}
+                <FiMapPin className="shrink-0 text-red-500" /> {location}
               </span>
             )}
             {item.hospitalName && (
               <span className="flex items-center gap-1">
-                <HiOutlineBuildingOffice2 className="text-red-400" /> {item.hospitalName}
+                <HiOutlineBuildingOffice2 className="shrink-0 text-red-500" /> {item.hospitalName}
               </span>
             )}
             {date !== "—" && (
               <span className="flex items-center gap-1">
-                <FiCalendar className="text-red-400" /> {date}
+                <FiCalendar className="shrink-0 text-red-500" /> {date}
               </span>
             )}
             {item.donationTime && (
               <span className="flex items-center gap-1">
-                <FiClock className="text-red-400" /> {item.donationTime}
+                <FiClock className="shrink-0 text-red-500" /> {item.donationTime}
               </span>
             )}
           </div>
 
-          <p className="mt-2 line-clamp-2 min-h-10 text-sm text-slate-600">
+          <p className="mt-3 line-clamp-2 min-h-10 text-sm leading-6 text-slate-700">
             {item.requestMessage || "No additional message."}
           </p>
         </div>
       </div>
 
-      <div className="mt-auto flex shrink-0 items-start pt-5">
+      <div className="mt-auto flex shrink-0 items-start pt-6">
         <Link
           href={`/donation-requests/${item._id}`}
-          className="w-full rounded-xl bg-red-600 px-5 py-2.5 text-center text-sm font-bold text-white transition hover:bg-red-700 hover:shadow-md"
+          className="w-full rounded-xl bg-red-600 px-5 py-3 text-center text-sm font-black text-white shadow-[0_6px_14px_rgba(220,38,38,0.2)] transition hover:bg-red-700 hover:shadow-[0_10px_22px_rgba(220,38,38,0.28)]"
         >
           View Details
         </Link>
