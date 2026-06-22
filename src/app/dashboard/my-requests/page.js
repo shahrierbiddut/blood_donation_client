@@ -7,7 +7,7 @@ import Navbar from "@/Components/Shared/Navbar";
 import Footer from "@/Components/Shared/Footer";
 import donationService from "@/services/donationService";
 import mockDonationRequests from "@/data/mockDonationRequests";
-import { FiChevronLeft, FiChevronRight, FiCheckCircle, FiClock, FiDroplet, FiMapPin, FiMoreHorizontal, FiPhone, FiXCircle } from "react-icons/fi";
+import { FiChevronLeft, FiChevronRight, FiCheckCircle, FiClock, FiDroplet, FiMapPin, FiMoreHorizontal, FiPhone, FiXCircle, FiEdit, FiEye } from "react-icons/fi";
 
 const statusMeta = {
   pending: {
@@ -40,6 +40,7 @@ const formatDate = (value) => {
 function RequestTableRow({ item, index, onStatusChange, updating }) {
   const meta = statusMeta[item.status] || statusMeta.pending;
   const location = [item.upazila, item.district].filter(Boolean).join(", ");
+  const [openMenu, setOpenMenu] = useState(false);
 
   return (
     <tr className="border-b border-slate-200 hover:bg-slate-50 transition">
@@ -73,7 +74,7 @@ function RequestTableRow({ item, index, onStatusChange, updating }) {
         </span>
       </td>
       <td className="px-6 py-4 text-center">
-        <div className="flex items-center justify-center gap-2">
+        <div className="relative flex items-center justify-center gap-2">
           {item.status === "inprogress" ? (
             <>
               <button 
@@ -99,13 +100,38 @@ function RequestTableRow({ item, index, onStatusChange, updating }) {
               View
             </Link>
           )}
-          <Link 
-            href={`/donation-requests/${item._id}`} 
-            className="p-1.5 text-slate-500 hover:text-red-600 transition"
-            aria-label="More options"
-          >
-            <FiMoreHorizontal size={18} />
-          </Link>
+          
+          {/* Dropdown Menu */}
+          <div className="relative">
+            <button
+              onClick={() => setOpenMenu(!openMenu)}
+              className="p-1.5 text-slate-500 hover:text-red-600 transition"
+              aria-label="More options"
+            >
+              <FiMoreHorizontal size={18} />
+            </button>
+
+            {openMenu && (
+              <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-10">
+                <Link
+                  href={`/donation-requests/${item._id}`}
+                  onClick={() => setOpenMenu(false)}
+                  className="flex items-center gap-2 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-600 border-b border-slate-100"
+                >
+                  <FiEye size={16} />
+                  View Details
+                </Link>
+                <Link
+                  href={`/dashboard/edit-request/${item._id}`}
+                  onClick={() => setOpenMenu(false)}
+                  className="flex items-center gap-2 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-orange-50 hover:text-orange-600"
+                >
+                  <FiEdit size={16} />
+                  Edit Request
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
       </td>
     </tr>
@@ -118,6 +144,7 @@ function MyRequestsContent() {
   const [updatingId, setUpdatingId] = useState("");
   const [notice, setNotice] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState("all");
   const itemsPerPage = 10;
 
   useEffect(() => {
@@ -158,10 +185,15 @@ function MyRequestsContent() {
     }
   };
 
+  // Filter requests based on status
+  const filteredRequests = statusFilter === "all" 
+    ? requests 
+    : requests.filter(req => req.status === statusFilter);
+
   // Pagination logic
-  const totalPages = Math.ceil(requests.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredRequests.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedRequests = requests.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedRequests = filteredRequests.slice(startIndex, startIndex + itemsPerPage);
 
   const handlePreviousPage = () => {
     if (currentPage > 1) {
@@ -175,28 +207,88 @@ function MyRequestsContent() {
     }
   };
 
+  const handleStatusFilterChange = (status) => {
+    setStatusFilter(status);
+    setCurrentPage(1); // Reset to first page when filter changes
+  };
+
   return (
     <div className="min-h-screen bg-slate-50">
       <Navbar />
       <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-3xl font-black text-slate-900">My <span className="text-red-600">Requests</span></h1>
-            <p className="text-sm text-slate-500">Track donor progress and manage your blood requests.</p>
+            <h1 className="text-3xl font-black text-slate-900">My <span className="text-red-600">Donation Requests</span></h1>
+            <p className="text-sm text-slate-500">Manage and track your blood donation posts.</p>
           </div>
           <Link href="/dashboard/create-request" className="w-fit rounded-xl bg-red-600 px-5 py-3 text-sm font-black text-white transition hover:bg-red-700">
             Create Request
           </Link>
         </div>
 
+        {/* Status Filter Dropdown */}
+        <div className="mb-6 relative inline-block w-full sm:w-auto">
+          <div className="relative group">
+            <button className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm font-bold text-slate-700 hover:border-red-300 transition">
+              <span>{statusFilter === "all" ? "All Status" : statusMeta[statusFilter]?.label}</span>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
+            </button>
+            
+            <div className="absolute left-0 mt-2 w-48 bg-white border border-slate-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition z-10">
+              <button
+                onClick={() => handleStatusFilterChange("all")}
+                className={`w-full text-left px-4 py-3 text-sm font-semibold border-b border-slate-100 hover:bg-slate-50 transition ${
+                  statusFilter === "all" ? "text-red-600 bg-red-50" : "text-slate-700"
+                }`}
+              >
+                All Status
+              </button>
+              <button
+                onClick={() => handleStatusFilterChange("pending")}
+                className={`w-full text-left px-4 py-3 text-sm font-semibold border-b border-slate-100 hover:bg-amber-50 transition ${
+                  statusFilter === "pending" ? "text-amber-600 bg-amber-50" : "text-slate-700"
+                }`}
+              >
+                Pending
+              </button>
+              <button
+                onClick={() => handleStatusFilterChange("inprogress")}
+                className={`w-full text-left px-4 py-3 text-sm font-semibold border-b border-slate-100 hover:bg-emerald-50 transition ${
+                  statusFilter === "inprogress" ? "text-emerald-600 bg-emerald-50" : "text-slate-700"
+                }`}
+              >
+                In Progress
+              </button>
+              <button
+                onClick={() => handleStatusFilterChange("done")}
+                className={`w-full text-left px-4 py-3 text-sm font-semibold border-b border-slate-100 hover:bg-blue-50 transition ${
+                  statusFilter === "done" ? "text-blue-600 bg-blue-50" : "text-slate-700"
+                }`}
+              >
+                Done
+              </button>
+              <button
+                onClick={() => handleStatusFilterChange("cancelled")}
+                className={`w-full text-left px-4 py-3 text-sm font-semibold hover:bg-red-50 transition ${
+                  statusFilter === "cancelled" ? "text-red-600 bg-red-50" : "text-slate-700"
+                }`}
+              >
+                Cancelled
+              </button>
+            </div>
+          </div>
+        </div>
+
         {notice ? <div className="mb-5 rounded-xl border border-slate-100 bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm">{notice}</div> : null}
 
         {loading ? (
           <div className="rounded-2xl border border-slate-100 bg-white py-20 text-center font-semibold text-slate-400">Loading...</div>
-        ) : requests.length === 0 ? (
+        ) : filteredRequests.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-red-200 bg-white py-20 text-center">
             <FiDroplet className="mx-auto mb-3 text-5xl text-red-200" />
-            <p className="font-semibold text-slate-500">You have not created any requests yet.</p>
+            <p className="font-semibold text-slate-500">{statusFilter === "all" ? "You have not created any requests yet." : `No ${statusMeta[statusFilter]?.label.toLowerCase()} requests found.`}</p>
           </div>
         ) : (
           <div className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
@@ -230,7 +322,7 @@ function MyRequestsContent() {
             {/* Pagination */}
             <div className="flex items-center justify-between border-t border-slate-200 px-6 py-4">
               <div className="text-sm font-semibold text-slate-600">
-                Showing <span className="font-black text-slate-900">{startIndex + 1}</span> to <span className="font-black text-slate-900">{Math.min(startIndex + itemsPerPage, requests.length)}</span> of <span className="font-black text-slate-900">{requests.length}</span> results
+                Showing <span className="font-black text-slate-900">{startIndex + 1}</span> to <span className="font-black text-slate-900">{Math.min(startIndex + itemsPerPage, filteredRequests.length)}</span> of <span className="font-black text-slate-900">{filteredRequests.length}</span> results
               </div>
               
               <div className="flex items-center gap-2">
