@@ -25,6 +25,8 @@ import { useAuth } from "@/context/AuthContext";
 import locationService from "@/services/locationService";
 import uploadService from "@/services/uploadService";
 import bannerImage from "../../../Assets/Blood.png";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
@@ -489,12 +491,14 @@ export default function RegisterPage() {
     event.preventDefault();
 
     if (!validateForm()) {
+      toast.error("Please fill in all required fields correctly");
       return;
     }
 
     try {
       setIsSubmitting(true);
       setApiError("");
+      toast.loading("Creating your account...");
 
       const avatarUrl = avatarFile ? await uploadService.uploadAvatar(avatarFile) : "";
 
@@ -506,12 +510,16 @@ export default function RegisterPage() {
       };
 
       await register(payload);
-      showSuccessToast("Account created successfully!");
+      toast.dismiss();
+      toast.success("Account created successfully! Redirecting...");
       setTimeout(() => {
         router.push("/");
-      }, 1400);
+      }, 1500);
     } catch (error) {
-      setApiError(error.message || error.response?.data?.message || "Registration failed. Please try again.");
+      toast.dismiss();
+      const errorMsg = error.message || error.response?.data?.message || "Registration failed. Please try again.";
+      setApiError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -878,6 +886,7 @@ export default function RegisterPage() {
           </div>
         </section>
       </div>
+      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 }

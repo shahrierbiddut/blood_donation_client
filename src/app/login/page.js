@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { Button, Input, Card, Spinner } from "@heroui/react";
 import { HiOutlineEnvelope, HiOutlineLockClosed, HiOutlineEye, HiOutlineEyeSlash } from "react-icons/hi2";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -70,16 +72,23 @@ export default function LoginPage() {
     e.preventDefault();
 
     if (!validateForm()) {
+      toast.error("Please fill in all required fields correctly");
       return;
     }
 
     try {
       setIsSubmitting(true);
+      toast.loading("Logging in...");
       await login(formData.email, formData.password);
+      toast.dismiss();
+      toast.success("Login successful! Redirecting...");
       // Redirect to dashboard
-      router.push("/dashboard");
+      setTimeout(() => router.push("/dashboard"), 1500);
     } catch (err) {
-      setSubmitError(err.message || "Login failed. Please try again.");
+      toast.dismiss();
+      const errorMsg = err.message || "Login failed. Please try again.";
+      setSubmitError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -201,6 +210,7 @@ export default function LoginPage() {
           <p>🩸 Donate blood, save lives. Together we can make a difference.</p>
         </div>
       </div>
+      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 }

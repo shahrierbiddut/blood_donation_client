@@ -9,6 +9,8 @@ import Footer from "@/Components/Shared/Footer";
 import donationService from "@/services/donationService";
 import mockDonationRequests from "@/data/mockDonationRequests";
 import { FiArrowLeft, FiCheck, FiX } from "react-icons/fi";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const statusOptions = [
   { value: "pending", label: "Pending" },
@@ -111,28 +113,40 @@ function EditRequestContent() {
 
       if (!formData.recipientName.trim()) {
         setError("Recipient name is required");
+        toast.error("Recipient name is required");
         return;
       }
 
+      toast.loading("Updating request...");
       if (!String(requestId).startsWith("mock-")) {
         const response = await donationService.update(requestId, formData);
         if (response?.success) {
+          toast.dismiss();
+          toast.success("Request updated successfully!");
           setSuccess("Request updated successfully!");
           setTimeout(() => {
             router.push("/dashboard/my-requests");
           }, 1500);
         } else {
-          setError(response?.message || "Failed to update request");
+          toast.dismiss();
+          const errorMsg = response?.message || "Failed to update request";
+          setError(errorMsg);
+          toast.error(errorMsg);
         }
       } else {
         // Mock update
+        toast.dismiss();
+        toast.success("Request updated successfully!");
         setSuccess("Request updated successfully!");
         setTimeout(() => {
           router.push("/dashboard/my-requests");
         }, 1500);
       }
     } catch (err) {
-      setError(err.message || "Failed to save request");
+      toast.dismiss();
+      const errorMsg = err.message || "Failed to save request";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setSaving(false);
     }
@@ -150,24 +164,35 @@ function EditRequestContent() {
         status: "inprogress"
       };
 
+      toast.loading("Accepting donor...");
       if (!String(requestId).startsWith("mock-")) {
         const response = await donationService.update(requestId, updateData);
         if (response?.success) {
+          toast.dismiss();
+          toast.success("Donation accepted! Status changed to In Progress");
           setSuccess("Donation accepted! Status changed to In Progress");
           setTimeout(() => {
             router.push("/dashboard/my-requests");
           }, 1500);
         } else {
-          setError(response?.message || "Failed to accept donation");
+          toast.dismiss();
+          const errorMsg = response?.message || "Failed to accept donation";
+          setError(errorMsg);
+          toast.error(errorMsg);
         }
       } else {
+        toast.dismiss();
+        toast.success("Donation accepted! Status changed to In Progress");
         setSuccess("Donation accepted! Status changed to In Progress");
         setTimeout(() => {
           router.push("/dashboard/my-requests");
         }, 1500);
       }
     } catch (err) {
-      setError(err.message || "Failed to accept donation");
+      toast.dismiss();
+      const errorMsg = err.message || "Failed to accept donation";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setSaving(false);
     }
@@ -378,6 +403,7 @@ function EditRequestContent() {
         </div>
       </main>
       <Footer />
+      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 }

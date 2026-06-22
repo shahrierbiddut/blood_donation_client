@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import ProtectedRoute from "@/Components/ProtectedRoute";
 import Navbar from "@/Components/Shared/Navbar";
 import Footer from "@/Components/Shared/Footer";
@@ -145,7 +145,26 @@ function MyRequestsContent() {
   const [notice, setNotice] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [openStatusDropdown, setOpenStatusDropdown] = useState(false);
+  const dropdownRef = useRef(null);
   const itemsPerPage = 10;
+
+  // Handle outside click to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setOpenStatusDropdown(false);
+      }
+    };
+
+    if (openStatusDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [openStatusDropdown]);
 
   useEffect(() => {
     const loadRequests = async () => {
@@ -227,57 +246,77 @@ function MyRequestsContent() {
         </div>
 
         {/* Status Filter Dropdown */}
-        <div className="mb-6 relative inline-block w-full sm:w-auto">
-          <div className="relative group">
-            <button className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm font-bold text-slate-700 hover:border-red-300 transition">
+        <div ref={dropdownRef} className="mb-6 relative inline-block w-full sm:w-auto">
+          <div className="relative">
+            <button 
+              onClick={() => setOpenStatusDropdown(!openStatusDropdown)}
+              className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm font-bold text-slate-700 hover:border-red-300 transition"
+            >
               <span>{statusFilter === "all" ? "All Status" : statusMeta[statusFilter]?.label}</span>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className={`w-4 h-4 transition-transform ${openStatusDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
               </svg>
             </button>
             
-            <div className="absolute left-0 mt-2 w-48 bg-white border border-slate-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition z-10">
-              <button
-                onClick={() => handleStatusFilterChange("all")}
-                className={`w-full text-left px-4 py-3 text-sm font-semibold border-b border-slate-100 hover:bg-slate-50 transition ${
-                  statusFilter === "all" ? "text-red-600 bg-red-50" : "text-slate-700"
-                }`}
-              >
-                All Status
-              </button>
-              <button
-                onClick={() => handleStatusFilterChange("pending")}
-                className={`w-full text-left px-4 py-3 text-sm font-semibold border-b border-slate-100 hover:bg-amber-50 transition ${
-                  statusFilter === "pending" ? "text-amber-600 bg-amber-50" : "text-slate-700"
-                }`}
-              >
-                Pending
-              </button>
-              <button
-                onClick={() => handleStatusFilterChange("inprogress")}
-                className={`w-full text-left px-4 py-3 text-sm font-semibold border-b border-slate-100 hover:bg-emerald-50 transition ${
-                  statusFilter === "inprogress" ? "text-emerald-600 bg-emerald-50" : "text-slate-700"
-                }`}
-              >
-                In Progress
-              </button>
-              <button
-                onClick={() => handleStatusFilterChange("done")}
-                className={`w-full text-left px-4 py-3 text-sm font-semibold border-b border-slate-100 hover:bg-blue-50 transition ${
-                  statusFilter === "done" ? "text-blue-600 bg-blue-50" : "text-slate-700"
-                }`}
-              >
-                Done
-              </button>
-              <button
-                onClick={() => handleStatusFilterChange("cancelled")}
-                className={`w-full text-left px-4 py-3 text-sm font-semibold hover:bg-red-50 transition ${
-                  statusFilter === "cancelled" ? "text-red-600 bg-red-50" : "text-slate-700"
-                }`}
-              >
-                Cancelled
-              </button>
-            </div>
+            {openStatusDropdown && (
+              <div className="absolute left-0 mt-2 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-10">
+                <button
+                  onClick={() => {
+                    handleStatusFilterChange("all");
+                    setOpenStatusDropdown(false);
+                  }}
+                  className={`w-full text-left px-4 py-3 text-sm font-semibold border-b border-slate-100 hover:bg-slate-50 transition ${
+                    statusFilter === "all" ? "text-red-600 bg-red-50" : "text-slate-700"
+                  }`}
+                >
+                  All Status
+                </button>
+                <button
+                  onClick={() => {
+                    handleStatusFilterChange("pending");
+                    setOpenStatusDropdown(false);
+                  }}
+                  className={`w-full text-left px-4 py-3 text-sm font-semibold border-b border-slate-100 hover:bg-amber-50 transition ${
+                    statusFilter === "pending" ? "text-amber-600 bg-amber-50" : "text-slate-700"
+                  }`}
+                >
+                  Pending
+                </button>
+                <button
+                  onClick={() => {
+                    handleStatusFilterChange("inprogress");
+                    setOpenStatusDropdown(false);
+                  }}
+                  className={`w-full text-left px-4 py-3 text-sm font-semibold border-b border-slate-100 hover:bg-emerald-50 transition ${
+                    statusFilter === "inprogress" ? "text-emerald-600 bg-emerald-50" : "text-slate-700"
+                  }`}
+                >
+                  In Progress
+                </button>
+                <button
+                  onClick={() => {
+                    handleStatusFilterChange("done");
+                    setOpenStatusDropdown(false);
+                  }}
+                  className={`w-full text-left px-4 py-3 text-sm font-semibold border-b border-slate-100 hover:bg-blue-50 transition ${
+                    statusFilter === "done" ? "text-blue-600 bg-blue-50" : "text-slate-700"
+                  }`}
+                >
+                  Done
+                </button>
+                <button
+                  onClick={() => {
+                    handleStatusFilterChange("cancelled");
+                    setOpenStatusDropdown(false);
+                  }}
+                  className={`w-full text-left px-4 py-3 text-sm font-semibold hover:bg-red-50 transition ${
+                    statusFilter === "cancelled" ? "text-red-600 bg-red-50" : "text-slate-700"
+                  }`}
+                >
+                  Cancelled
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

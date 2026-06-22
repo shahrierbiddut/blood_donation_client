@@ -7,6 +7,8 @@ import Navbar from "@/Components/Shared/Navbar";
 import Footer from "@/Components/Shared/Footer";
 import ProtectedRoute from "@/Components/ProtectedRoute";
 import donationService from "@/services/donationService";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
@@ -101,15 +103,25 @@ function CreateRequestContent() {
     setSuccess("");
 
     const validationError = validate();
-    if (validationError) { setError(validationError); return; }
+    if (validationError) {
+      setError(validationError);
+      toast.error(validationError);
+      return;
+    }
 
     try {
       setSubmitting(true);
+      toast.loading("Creating donation request...");
       await donationService.create(form);
+      toast.dismiss();
+      toast.success("Donation request created successfully!");
       setSuccess("Donation request created successfully!");
       setTimeout(() => router.push("/dashboard"), 1500);
     } catch (err) {
-      setError(err?.response?.data?.message || "Failed to create request. Please try again.");
+      toast.dismiss();
+      const errorMsg = err?.response?.data?.message || "Failed to create request. Please try again.";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setSubmitting(false);
     }
@@ -287,6 +299,7 @@ function CreateRequestContent() {
       </main>
 
       <Footer />
+      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 }

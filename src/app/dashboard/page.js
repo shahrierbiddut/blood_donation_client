@@ -15,10 +15,7 @@ import {
   FiPlusCircle,
   FiHome,
   FiList,
-  FiSearch,
-  FiDollarSign,
-  FiUser,
-  FiSettings
+  FiUser
 } from "react-icons/fi";
 import { useAuth } from "@/context/AuthContext";
 import ProtectedRoute from "@/Components/ProtectedRoute";
@@ -60,10 +57,7 @@ function DashboardContent() {
     () => [
       { href: "/dashboard", icon: FiHome, label: "Dashboard" },
       { href: "/dashboard/my-requests", icon: FiList, label: "My Requests" },
-      { href: "/search-donors", icon: FiSearch, label: "Search Donors" },
-      { href: "/dashboard/my-funding", icon: FiDollarSign, label: "My Funding" },
       { href: "/dashboard/profile", icon: FiUser, label: "Profile" },
-      { href: "/dashboard/settings", icon: FiSettings, label: "Settings" },
       { href: "/dashboard/create-request", icon: FiPlusCircle, label: "Create Request" }
     ],
     []
