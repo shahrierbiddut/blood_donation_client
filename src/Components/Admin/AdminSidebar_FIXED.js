@@ -37,6 +37,7 @@ export default function AdminSidebar() {
   };
 
   const handleProfileUpdate = () => {
+    // In real app, this would call an API
     console.log("Profile updated:", profileData);
     setShowProfileEdit(false);
   };
@@ -57,10 +58,14 @@ export default function AdminSidebar() {
 
   return (
     <>
+      {/* Desktop Sidebar */}
       <aside className="w-72 bg-gradient-to-b from-slate-900 to-slate-800 hidden md:flex flex-col h-screen sticky top-0 text-white shadow-lg">
+        {/* Header */}
         <div className="p-6 border-b border-slate-700">
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center font-bold">🩸</div>
+            <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center font-bold">
+              🩸
+            </div>
             <div>
               <h1 className="text-lg font-black">BLOOD DONATION</h1>
               <p className="text-xs text-red-400 font-semibold">APPLICATION</p>
@@ -69,6 +74,7 @@ export default function AdminSidebar() {
           <p className="text-xs text-slate-400 mt-2">Admin Panel</p>
         </div>
 
+        {/* Navigation */}
         <nav className="flex-1 overflow-y-auto p-4 space-y-2">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -89,6 +95,7 @@ export default function AdminSidebar() {
           })}
         </nav>
 
+        {/* Help Section */}
         <div className="p-4 border-t border-slate-700 space-y-3">
           <div className="bg-slate-700 bg-opacity-50 rounded-lg p-3">
             <div className="flex items-center gap-2 mb-2">
@@ -101,6 +108,7 @@ export default function AdminSidebar() {
             </button>
           </div>
 
+          {/* Profile Card */}
           <div className="bg-gradient-to-br from-slate-700 to-slate-800 rounded-lg p-4 border border-slate-600">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
@@ -129,6 +137,7 @@ export default function AdminSidebar() {
         </div>
       </aside>
 
+      {/* Profile Edit Modal */}
       {showProfileEdit && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
@@ -144,33 +153,12 @@ export default function AdminSidebar() {
             </div>
 
             {/* Modal Body */}
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                console.log("Profile updated:", profileData); // Replace with API call
-                setShowProfileEdit(false);
-              }}
-              className="p-6 space-y-4"
-            >
+            <div className="p-6 space-y-4">
               {/* Profile Avatar */}
               <div className="flex justify-center mb-4">
-                <label className="flex flex-col items-center w-full cursor-pointer">
-                  <div
-                    className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center text-gray-400 border-2 border-dashed hover:border-blue-400"
-                  >
-                    <FiEdit2 size={18} />
-                  </div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files[0];
-                      if (file) setProfileData((prev) => ({ ...prev, avatar: file }));
-                    }}
-                  />
-                  <p className="text-sm text-gray-500 mt-1">Upload a profile picture</p>
-                </label>
+                <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center text-white font-bold text-2xl">
+                  {profileData.name.charAt(0)}
+                </div>
               </div>
 
               {/* Name Field */}
@@ -181,7 +169,7 @@ export default function AdminSidebar() {
                 <input
                   type="text"
                   value={profileData.name}
-                  onChange={(e) => setProfileData((prev) => ({ ...prev, name: e.target.value }))}
+                  onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
                 />
               </div>
@@ -194,7 +182,7 @@ export default function AdminSidebar() {
                 <input
                   type="email"
                   value={profileData.email}
-                  onChange={(e) => setProfileData((prev) => ({ ...prev, email: e.target.value }))}
+                  onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
                 />
               </div>
@@ -207,48 +195,34 @@ export default function AdminSidebar() {
                 <input
                   type="tel"
                   value={profileData.phone}
-                  onChange={(e) => setProfileData((prev) => ({ ...prev, phone: e.target.value }))}
+                  onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
                 />
               </div>
 
-              {/* Role Field (Readonly) */}
+              {/* Role Info */}
               <div className="p-3 bg-gray-50 rounded-lg">
                 <p className="text-sm text-gray-600">
-                  <strong>Role:</strong> <span className="text-purple-600 font-semibold">{user?.role || "Admin"}</span>
+                  <strong>Role:</strong> <span className="text-purple-600 font-semibold">Super Admin</span>
                 </p>
               </div>
+            </div>
 
-              {/* Address Field */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Address
-                </label>
-                <textarea
-                  rows={3}
-                  value={profileData.address}
-                  onChange={(e) => setProfileData((prev) => ({ ...prev, address: e.target.value }))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
-                />
-              </div>
-
-              {/* Save & Cancel Buttons */}
-              <div className="flex gap-4 p-6 border-t border-gray-200">
-                <button
-                  type="button"
-                  onClick={() => setShowProfileEdit(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </form>
+            {/* Modal Footer */}
+            <div className="flex gap-3 p-6 border-t border-gray-200">
+              <button
+                onClick={() => setShowProfileEdit(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleProfileUpdate}
+                className="flex-1 px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition"
+              >
+                Save Changes
+              </button>
+            </div>
           </div>
         </div>
       )}

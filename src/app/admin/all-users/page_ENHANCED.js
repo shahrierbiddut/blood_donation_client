@@ -176,6 +176,7 @@ export default function AllUsersPage() {
         <p className="text-gray-600 text-sm">Manage and monitor registered users</p>
       </div>
 
+      {/* Search Bar */}
       <div className="mb-6 flex items-center justify-between gap-4">
         <div className="flex-1">
           <input
@@ -191,10 +192,12 @@ export default function AllUsersPage() {
         </div>
       </div>
 
+      {/* Users Table */}
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
         <DataTable columns={columns} data={filteredUsers} />
       </div>
 
+      {/* Profile Modal (optional - can be enhanced) */}
       {selectedUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">

@@ -1,83 +1,176 @@
 "use client";
 
-import { FiUsers, FiDollarSign, FiDroplet, FiHeart } from 'react-icons/fi';
-import StatCard from '@/Components/Admin/StatCard';
-import { LineChart, Line, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis } from 'recharts';
-import { users, requests, funding } from '@/data/adminMock';
+import { useState } from "react";
+import StatCard from "@/Components/Admin/StatCard";
+import { users, requests, funding } from "@/data/adminMock";
+import { FiUsers, FiDollarSign, FiDroplet, FiHeart } from "react-icons/fi";
+import { LineChart, Line, PieChart, Pie, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts";
+
+const monthlyData = [
+  { name: "Jan", requests: 8, donors: 12 },
+  { name: "Feb", requests: 14, donors: 18 },
+  { name: "Mar", requests: 28, donors: 32 },
+  { name: "Apr", requests: 25, donors: 28 },
+];
+
+const bloodGroupData = [
+  { name: "A+", value: 25, color: "#DC2626" },
+  { name: "O+", value: 30, color: "#EF4444" },
+  { name: "B+", value: 20, color: "#F87171" },
+  { name: "AB+", value: 15, color: "#FCA5A5" },
+  { name: "Others", value: 10, color: "#FECACA" },
+];
+
+const fundingData = [
+  { month: "Jan", amount: 1200 },
+  { month: "Feb", amount: 1900 },
+  { month: "Mar", amount: 1600 },
+  { month: "Apr", amount: 2100 },
+];
+
+const recentRequests = requests.slice(0, 5);
 
 export default function AdminDashboard() {
-  const stats = {
-    totalUsers: users.length,
-    totalFunding: funding.reduce((s, f) => s + f.amount, 0),
-    totalRequests: requests.length,
-    activeVolunteers: users.filter(u => u.role === 'volunteer').length
-  };
-
-  const donutData = [
-    { name: 'A+', value: 28 }, { name: 'O+', value: 25 }, { name: 'B+', value: 20 }, { name: 'AB+', value: 15 }, { name: 'Others', value: 12 }
-  ];
-  const COLORS = ['#DC2626', '#991B1B', '#F59E0B', '#16A34A', '#94A3B8'];
+  const activeVolunteers = users.filter((u) => u.role === "volunteer" && u.status === "active").length;
+  const totalFunding = funding.reduce((sum, f) => sum + f.amount, 0);
 
   return (
     <div>
-      <header className="mb-6 flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-black text-slate-900">Welcome Back, Admin</h2>
-          <p className="text-sm text-slate-500">{new Date().toLocaleDateString()}</p>
-        </div>
-      </header>
+      {/* Welcome Section */}
+      <div className="mb-8">
+        <h1 className="text-4xl font-black text-slate-900">Welcome Back, Admin 👋</h1>
+        <p className="text-gray-600 mt-2">{new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>
+      </div>
 
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-4 mb-6">
-        <StatCard title="Total Users" value={stats.totalUsers} icon={<FiUsers />} />
-        <StatCard title="Total Funding" value={`$${stats.totalFunding}`} icon={<FiDollarSign />} />
-        <StatCard title="Blood Donation Requests" value={stats.totalRequests} icon={<FiDroplet />} />
-        <StatCard title="Active Volunteers" value={stats.activeVolunteers} icon={<FiHeart />} />
-      </section>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <StatCard
+          title="Total Users"
+          value={users.length}
+          icon={<FiUsers size={24} />}
+          delta="+12% from last month"
+        />
+        <StatCard
+          title="Total Funding"
+          value={`$${totalFunding}`}
+          icon={<FiDollarSign size={24} />}
+          delta="+8% from last month"
+        />
+        <StatCard
+          title="Blood Donation Requests"
+          value={requests.length}
+          icon={<FiDroplet size={24} />}
+          delta={`${requests.filter((r) => r.status === "pending").length} pending`}
+        />
+        <StatCard
+          title="Active Volunteers"
+          value={activeVolunteers}
+          icon={<FiHeart size={24} />}
+          delta="+5 this month"
+        />
+      </div>
 
-      <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="col-span-2 rounded-2xl border border-slate-100 bg-white p-4">
-          <h3 className="text-lg font-bold text-slate-900 mb-4">Monthly Donation Requests</h3>
-          <div style={{ height: 220 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={[{month:'Jan', value:10},{month:'Feb', value:20},{month:'Mar', value:30},{month:'Apr', value:28}]}> 
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Line type="monotone" dataKey="value" stroke="#DC2626" strokeWidth={2} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* Monthly Donations Chart */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Monthly Donation Requests</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={monthlyData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Line type="monotone" dataKey="requests" stroke="#DC2626" strokeWidth={2} dot={{ fill: "#DC2626" }} />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
 
-        <div className="rounded-2xl border border-slate-100 bg-white p-4">
-          <h3 className="text-lg font-bold text-slate-900 mb-4">Blood Group Distribution</h3>
-          <div style={{ height: 220 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={donutData} dataKey="value" nameKey="name" innerRadius={50} outerRadius={80}>
-                  {donutData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+        {/* Blood Group Distribution */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Blood Group Distribution</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={bloodGroupData}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={100}
+                paddingAngle={5}
+                dataKey="value"
+              >
+                {bloodGroupData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
         </div>
-      </section>
+      </div>
 
-      <section className="mt-6">
-        <div className="rounded-2xl border border-slate-100 bg-white p-4">
-          <h3 className="text-lg font-bold text-slate-900 mb-4">Funding Growth</h3>
-          <div style={{ height: 200 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={[{month:'Jan', a:400},{month:'Feb', a:600},{month:'Mar', a:800}]}> 
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Bar dataKey="a" fill="#DC2626" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+      {/* Funding Growth Chart */}
+      <div className="grid grid-cols-1 gap-6 mb-8">
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Funding Growth</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={fundingData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="amount" fill="#DC2626" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
-      </section>
+      </div>
+
+      {/* Recent Requests Table */}
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="p-6 border-b border-gray-200">
+          <h2 className="text-xl font-bold text-gray-900">Recent Blood Donation Requests</h2>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Recipient</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Blood Group</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Location</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Date</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentRequests.map((request) => (
+                <tr key={request.id} className="border-b border-gray-200 hover:bg-gray-50">
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{request.recipientName}</td>
+                  <td className="px-6 py-4 text-sm font-bold text-red-600">{request.bloodGroup}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{request.district}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{request.donationDate}</td>
+                  <td className="px-6 py-4 text-sm">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        request.status === "pending"
+                          ? "bg-yellow-100 text-yellow-700"
+                          : request.status === "inprogress"
+                          ? "bg-blue-100 text-blue-700"
+                          : request.status === "done"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-red-100 text-red-700"
+                      }`}
+                    >
+                      {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
