@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import StatusBadge from "@/Components/Admin/StatusBadge";
 import { requests as mockRequests } from "@/data/adminMock";
 import { FiCalendar, FiCheckCircle, FiClock, FiDroplet, FiEdit2, FiEye, FiMapPin, FiSearch, FiTrash2, FiXCircle } from "react-icons/fi";
@@ -93,16 +94,6 @@ export default function AllDonationsPage() {
     toast.success("Donation record deleted");
   };
 
-  const handleStatusCycle = (id) => {
-    const order = ["pending", "inprogress", "done", "cancelled"];
-    setDonations((items) => items.map((item) => {
-      if (item.id !== id) return item;
-      const nextStatus = order[(order.indexOf(item.status) + 1) % order.length];
-      return { ...item, status: nextStatus };
-    }));
-    toast.success("Donation status updated");
-  };
-
   return (
     <div>
       <div className="mb-6">
@@ -172,7 +163,7 @@ export default function AllDonationsPage() {
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-2">
                       <button onClick={() => setSelectedDonation(donation)} className="rounded-lg p-2 text-blue-600 hover:bg-blue-50" title="View"><FiEye /></button>
-                      <button onClick={() => handleStatusCycle(donation.id)} className="rounded-lg p-2 text-slate-600 hover:bg-slate-100" title="Update status"><FiEdit2 /></button>
+                      <Link href={`/admin/all-donations/${donation.id}`} className="rounded-lg p-2 text-slate-600 hover:bg-slate-100" title="Edit donation"><FiEdit2 /></Link>
                       <button onClick={() => handleDelete(donation.id)} className="rounded-lg p-2 text-red-600 hover:bg-red-50" title="Delete"><FiTrash2 /></button>
                     </div>
                   </td>
