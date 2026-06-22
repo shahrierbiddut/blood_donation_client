@@ -17,7 +17,9 @@ import {
   FiLogOut,
   FiEdit2,
   FiX,
-  FiPhone
+  FiPhone,
+  FiCamera,
+  FiMail
 } from "react-icons/fi";
 
 export default function AdminSidebar() {
@@ -28,7 +30,10 @@ export default function AdminSidebar() {
   const [profileData, setProfileData] = useState({
     name: user?.name || "Admin Rahim",
     email: user?.email || "admin@gmail.com",
-    phone: user?.phone || "01700000000"
+    phone: user?.phone || "01700000000",
+    role: user?.role || "Super Admin",
+    address: user?.address || "Dhanmondi, Dhaka",
+    avatar: user?.avatar || "https://i.pravatar.cc/120?img=12"
   });
 
   const handleLogout = async () => {
@@ -37,8 +42,18 @@ export default function AdminSidebar() {
   };
 
   const handleProfileUpdate = () => {
-    console.log("Profile updated:", profileData);
     setShowProfileEdit(false);
+  };
+
+  const handleAvatarUpload = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setProfileData((prev) => ({ ...prev, avatar: reader.result }));
+    };
+    reader.readAsDataURL(file);
   };
 
   const isActive = (path) => pathname === path;
@@ -103,12 +118,13 @@ export default function AdminSidebar() {
 
           <div className="bg-gradient-to-br from-slate-700 to-slate-800 rounded-lg p-4 border border-slate-600">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                {user?.name?.charAt(0) || "A"}
-              </div>
+              <div
+                className="w-12 h-12 rounded-full bg-cover bg-center ring-2 ring-red-400/60 shadow-lg"
+                style={{ backgroundImage: `url(${profileData.avatar})` }}
+              />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold truncate">{user?.name || "Admin Rahim"}</p>
-                <p className="text-xs text-red-400 font-semibold">Super Admin</p>
+                <p className="text-sm font-bold truncate">{profileData.name}</p>
+                <p className="text-xs text-red-400 font-semibold">{profileData.role}</p>
               </div>
               <button
                 onClick={() => setShowProfileEdit(true)}
@@ -131,49 +147,46 @@ export default function AdminSidebar() {
 
       {showProfileEdit && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900">Edit Profile</h2>
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full overflow-hidden">
+            <div className="relative bg-gradient-to-r from-red-950 to-red-700 px-6 py-7 text-white">
               <button
                 onClick={() => setShowProfileEdit(false)}
-                className="p-1 hover:bg-gray-100 rounded-lg transition"
+                className="absolute right-4 top-4 rounded-lg bg-white/10 p-2 transition hover:bg-white/20"
               >
-                <FiX size={20} className="text-gray-600" />
+                <FiX size={20} />
               </button>
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <div
+                    className="h-24 w-24 rounded-full border-4 border-white bg-cover bg-center shadow-xl"
+                    style={{ backgroundImage: `url(${profileData.avatar})` }}
+                  />
+                  <label className="absolute bottom-1 right-1 grid h-9 w-9 cursor-pointer place-items-center rounded-full bg-red-600 text-white shadow-lg ring-2 ring-white hover:bg-red-700">
+                    <FiCamera size={16} />
+                    <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+                  </label>
+                </div>
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wide text-red-100">Admin Profile</p>
+                  <h2 className="text-2xl font-black">{profileData.name}</h2>
+                  <p className="mt-1 text-sm text-red-100">{profileData.role}</p>
+                </div>
+              </div>
             </div>
 
-            {/* Modal Body */}
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                console.log("Profile updated:", profileData); // Replace with API call
-                setShowProfileEdit(false);
+                handleProfileUpdate();
               }}
-              className="p-6 space-y-4"
+              className="p-6"
             >
-              {/* Profile Avatar */}
-              <div className="flex justify-center mb-4">
-                <label className="flex flex-col items-center w-full cursor-pointer">
-                  <div
-                    className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center text-gray-400 border-2 border-dashed hover:border-blue-400"
-                  >
-                    <FiEdit2 size={18} />
-                  </div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files[0];
-                      if (file) setProfileData((prev) => ({ ...prev, avatar: file }));
-                    }}
-                  />
-                  <p className="text-sm text-gray-500 mt-1">Upload a profile picture</p>
-                </label>
+              <div className="mb-5 grid gap-4 rounded-xl border border-slate-100 bg-slate-50 p-4 sm:grid-cols-2">
+                <p className="flex items-center gap-2 text-sm font-semibold text-slate-700"><FiMail className="text-red-500" /> {profileData.email}</p>
+                <p className="flex items-center gap-2 text-sm font-semibold text-slate-700"><FiPhone className="text-red-500" /> {profileData.phone}</p>
               </div>
 
-              {/* Name Field */}
+              <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Full Name
@@ -186,7 +199,6 @@ export default function AdminSidebar() {
                 />
               </div>
 
-              {/* Email Field */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Email Address
@@ -199,7 +211,6 @@ export default function AdminSidebar() {
                 />
               </div>
 
-              {/* Phone Field */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Phone Number
@@ -212,15 +223,19 @@ export default function AdminSidebar() {
                 />
               </div>
 
-              {/* Role Field (Readonly) */}
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600">
-                  <strong>Role:</strong> <span className="text-purple-600 font-semibold">{user?.role || "Admin"}</span>
-                </p>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Role
+                </label>
+                <input
+                  type="text"
+                  value={profileData.role}
+                  onChange={(e) => setProfileData((prev) => ({ ...prev, role: e.target.value }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
+                />
               </div>
 
-              {/* Address Field */}
-              <div>
+              <div className="sm:col-span-2">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Address
                 </label>
@@ -231,9 +246,9 @@ export default function AdminSidebar() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
                 />
               </div>
+              </div>
 
-              {/* Save & Cancel Buttons */}
-              <div className="flex gap-4 p-6 border-t border-gray-200">
+              <div className="mt-6 flex gap-4 border-t border-gray-200 pt-5">
                 <button
                   type="button"
                   onClick={() => setShowProfileEdit(false)}

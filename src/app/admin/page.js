@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import StatCard from "@/Components/Admin/StatCard";
 import { users, requests, funding } from "@/data/adminMock";
 import { FiUsers, FiDollarSign, FiDroplet, FiHeart } from "react-icons/fi";
@@ -14,11 +13,11 @@ const monthlyData = [
 ];
 
 const bloodGroupData = [
-  { name: "A+", value: 25, color: "#DC2626" },
-  { name: "O+", value: 30, color: "#EF4444" },
-  { name: "B+", value: 20, color: "#F87171" },
-  { name: "AB+", value: 15, color: "#FCA5A5" },
-  { name: "Others", value: 10, color: "#FECACA" },
+  { name: "A+", value: 28, color: "#DC2626" },
+  { name: "O-", value: 25, color: "#A9B8D8" },
+  { name: "B+", value: 20, color: "#F9734D" },
+  { name: "AB+", value: 15, color: "#667085" },
+  { name: "Others", value: 12, color: "#17233D" },
 ];
 
 const fundingData = [
@@ -29,6 +28,49 @@ const fundingData = [
 ];
 
 const recentRequests = requests.slice(0, 5);
+
+function BloodGroupDistribution() {
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <h2 className="text-xl font-bold text-gray-900 mb-4">Blood Group Distribution</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-[1fr_180px] items-center gap-4">
+        <div className="h-[245px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={bloodGroupData}
+                cx="50%"
+                cy="50%"
+                innerRadius={58}
+                outerRadius={96}
+                paddingAngle={0}
+                stroke="#ffffff"
+                strokeWidth={2}
+                dataKey="value"
+              >
+                {bloodGroupData.map((entry) => (
+                  <Cell key={entry.name} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(value) => `${value}%`} />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="space-y-4">
+          {bloodGroupData.map((item) => (
+            <div key={item.name} className="flex items-center justify-between gap-5 text-sm font-semibold text-slate-700">
+              <span className="flex items-center gap-3">
+                <span className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
+                {item.name}
+              </span>
+              <span className="text-slate-500">{item.value}%</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function AdminDashboard() {
   const activeVolunteers = users.filter((u) => u.role === "volunteer" && u.status === "active").length;
@@ -87,28 +129,7 @@ export default function AdminDashboard() {
           </ResponsiveContainer>
         </div>
 
-        {/* Blood Group Distribution */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Blood Group Distribution</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={bloodGroupData}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={100}
-                paddingAngle={5}
-                dataKey="value"
-              >
-                {bloodGroupData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
+        <BloodGroupDistribution />
       </div>
 
       {/* Funding Growth Chart */}
