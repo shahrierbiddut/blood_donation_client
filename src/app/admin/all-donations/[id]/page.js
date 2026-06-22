@@ -46,6 +46,23 @@ const statusOptions = [
   { value: "cancelled", label: "Cancelled", dot: "bg-red-500" }
 ];
 
+const STATUS_STORAGE_KEY = "blood_donation_admin_status_overrides";
+
+const getStatusOverrides = () => {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(localStorage.getItem(STATUS_STORAGE_KEY) || "{}");
+  } catch {
+    return {};
+  }
+};
+
+const saveStatusOverride = (id, status) => {
+  if (typeof window === "undefined") return;
+  const current = getStatusOverrides();
+  localStorage.setItem(STATUS_STORAGE_KEY, JSON.stringify({ ...current, [id]: status }));
+};
+
 function SummaryCard({ icon: Icon, label, value, tone = "red" }) {
   const toneClass = {
     red: "bg-red-50 text-red-600",
@@ -95,7 +112,9 @@ export default function DonationDetailsPage() {
   const router = useRouter();
   const donations = useMemo(() => [...mockRequests, ...extraDonations], []);
   const donation = donations.find((item) => item.id === params?.id);
-  const [status, setStatus] = useState(donation?.status || "pending");
+  const initialStatus = donation?.id ? getStatusOverrides()[donation.id] || donation.status : "pending";
+  const [status, setStatus] = useState(initialStatus);
+  const [savedStatus, setSavedStatus] = useState(initialStatus);
 
   if (!donation) {
     return (
@@ -107,6 +126,8 @@ export default function DonationDetailsPage() {
   }
 
   const handleUpdateStatus = () => {
+    saveStatusOverride(donation.id, status);
+    setSavedStatus(status);
     toast.success(`Donation status updated to ${statusOptions.find((item) => item.value === status)?.label || status}`);
   };
 
@@ -136,7 +157,7 @@ export default function DonationDetailsPage() {
         <SummaryCard icon={FiDroplet} label="Blood Group" value={donation.bloodGroup} />
         <SummaryCard icon={FiCalendar} label="Donation Date" value={donation.donationDate} />
         <SummaryCard icon={FiClock} label="Donation Time" value={donation.donationTime} />
-        <SummaryCard icon={FiClock} label="Current Status" value={<StatusBadge status={status} />} tone="amber" />
+        <SummaryCard icon={FiClock} label="Current Status" value={<StatusBadge status={savedStatus} />} tone="amber" />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
@@ -174,7 +195,7 @@ export default function DonationDetailsPage() {
 
             <div>
               <p className="text-sm font-bold text-slate-700">Current Status</p>
-              <div className="mt-2"><StatusBadge status={status} /></div>
+              <div className="mt-2"><StatusBadge status={savedStatus} /></div>
             </div>
 
             <div className="my-8 h-px bg-slate-100" />

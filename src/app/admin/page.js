@@ -2,7 +2,7 @@
 
 import StatCard from "@/Components/Admin/StatCard";
 import { users, requests, funding } from "@/data/adminMock";
-import { FiUsers, FiDollarSign, FiDroplet, FiHeart } from "react-icons/fi";
+import { FiUsers, FiDollarSign, FiDroplet, FiHeart, FiTrendingUp } from "react-icons/fi";
 import { LineChart, Line, PieChart, Pie, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts";
 
 const monthlyData = [
@@ -21,10 +21,12 @@ const bloodGroupData = [
 ];
 
 const fundingData = [
-  { month: "Jan", amount: 1200 },
-  { month: "Feb", amount: 1900 },
-  { month: "Mar", amount: 1600 },
-  { month: "Apr", amount: 2100 },
+  { month: "Jan", amount: 1200, donors: 24, color: "#E11D48" },
+  { month: "Feb", amount: 1900, donors: 38, color: "#2563EB" },
+  { month: "Mar", amount: 1600, donors: 31, color: "#F59E0B" },
+  { month: "Apr", amount: 2100, donors: 42, color: "#10B981" },
+  { month: "May", amount: 2450, donors: 49, color: "#7C3AED" },
+  { month: "Jun", amount: 2250, donors: 45, color: "#0F766E" },
 ];
 
 const recentRequests = requests.slice(0, 5);
@@ -66,6 +68,82 @@ function BloodGroupDistribution() {
               <span className="text-slate-500">{item.value}%</span>
             </div>
           ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FundingGrowthChart() {
+  const total = fundingData.reduce((sum, item) => sum + item.amount, 0);
+  const topMonth = fundingData.reduce((best, item) => (item.amount > best.amount ? item : best), fundingData[0]);
+  const average = Math.round(total / fundingData.length);
+
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white p-6">
+      <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">Funding Growth</h2>
+          <p className="mt-1 text-sm font-medium text-slate-500">Monthly donor funding performance and campaign momentum.</p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl bg-rose-50 px-4 py-3">
+            <p className="text-[11px] font-bold uppercase text-rose-500">Total Raised</p>
+            <p className="mt-1 text-lg font-black text-slate-900">${total.toLocaleString()}</p>
+          </div>
+          <div className="rounded-xl bg-emerald-50 px-4 py-3">
+            <p className="text-[11px] font-bold uppercase text-emerald-600">Best Month</p>
+            <p className="mt-1 text-lg font-black text-slate-900">{topMonth.month}</p>
+          </div>
+          <div className="rounded-xl bg-blue-50 px-4 py-3">
+            <p className="text-[11px] font-bold uppercase text-blue-600">Avg/Month</p>
+            <p className="mt-1 text-lg font-black text-slate-900">${average.toLocaleString()}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1fr_210px]">
+        <div className="h-[330px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={fundingData} margin={{ top: 16, right: 10, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#E5E7EB" />
+              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "#64748B", fontSize: 12, fontWeight: 600 }} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fill: "#64748B", fontSize: 12 }} tickFormatter={(value) => `$${value}`} />
+              <Tooltip
+                cursor={{ fill: "rgba(15, 23, 42, 0.04)" }}
+                formatter={(value, name) => [name === "amount" ? `$${value}` : value, name === "amount" ? "Funding" : "Donors"]}
+                contentStyle={{ borderRadius: 12, border: "1px solid #E2E8F0", boxShadow: "0 16px 30px rgba(15,23,42,0.12)" }}
+              />
+              <Bar dataKey="amount" radius={[10, 10, 4, 4]} barSize={48}>
+                {fundingData.map((item) => (
+                  <Cell key={item.month} fill={item.color} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+          <div className="mb-4 flex items-center gap-2">
+            <span className="grid h-9 w-9 place-items-center rounded-lg bg-white text-emerald-600 shadow-sm">
+              <FiTrendingUp />
+            </span>
+            <div>
+              <p className="text-sm font-black text-slate-900">Monthly Split</p>
+              <p className="text-xs font-semibold text-slate-500">Color by month</p>
+            </div>
+          </div>
+          <div className="space-y-3">
+            {fundingData.map((item) => (
+              <div key={item.month} className="flex items-center justify-between gap-4 rounded-lg bg-white px-3 py-2 shadow-sm">
+                <span className="flex items-center gap-2 text-sm font-bold text-slate-700">
+                  <span className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
+                  {item.month}
+                </span>
+                <span className="text-sm font-black text-slate-900">${item.amount.toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -134,18 +212,7 @@ export default function AdminDashboard() {
 
       {/* Funding Growth Chart */}
       <div className="grid grid-cols-1 gap-6 mb-8">
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Funding Growth</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={fundingData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="amount" fill="#DC2626" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        <FundingGrowthChart />
       </div>
 
       {/* Recent Requests Table */}

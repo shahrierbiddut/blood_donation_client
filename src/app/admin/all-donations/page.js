@@ -37,6 +37,18 @@ const extraDonations = [
   }
 ];
 
+const STATUS_STORAGE_KEY = "blood_donation_admin_status_overrides";
+
+const applyStatusOverrides = (items) => {
+  if (typeof window === "undefined") return items;
+  try {
+    const overrides = JSON.parse(localStorage.getItem(STATUS_STORAGE_KEY) || "{}");
+    return items.map((item) => ({ ...item, status: overrides[item.id] || item.status }));
+  } catch {
+    return items;
+  }
+};
+
 function MetricCard({ icon: Icon, label, value, tone }) {
   const toneClass = {
     red: "bg-red-50 text-red-600",
@@ -73,7 +85,7 @@ function Avatar({ name, src }) {
 }
 
 export default function AllDonationsPage() {
-  const [donations, setDonations] = useState(() => [...mockRequests, ...extraDonations]);
+  const [donations, setDonations] = useState(() => applyStatusOverrides([...mockRequests, ...extraDonations]));
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [selectedDonation, setSelectedDonation] = useState(null);

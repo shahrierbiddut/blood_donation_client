@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import DataTable from "@/Components/Admin/DataTable";
 import StatusBadge from "@/Components/Admin/StatusBadge";
 import { users as mockUsers } from "@/data/adminMock";
@@ -12,6 +12,14 @@ export default function AllUsersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
+
+  useEffect(() => {
+    if (!activeDropdown) return;
+
+    const closeDropdown = () => setActiveDropdown(null);
+    document.addEventListener("pointerdown", closeDropdown);
+    return () => document.removeEventListener("pointerdown", closeDropdown);
+  }, [activeDropdown]);
 
   const filteredUsers = users.filter(
     (u) =>
@@ -65,7 +73,7 @@ export default function AllUsersPage() {
   };
 
   const ActionMenu = ({ user }) => (
-    <div className="relative">
+    <div className="relative" onPointerDown={(event) => event.stopPropagation()}>
       <button
         onClick={() => setActiveDropdown(activeDropdown === user.id ? null : user.id)}
         className="p-2 hover:bg-gray-100 rounded-lg transition"
