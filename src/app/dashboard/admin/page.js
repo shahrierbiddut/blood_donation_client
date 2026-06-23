@@ -1,6 +1,7 @@
 "use client";
 
 import StatCard from "@/Components/Admin/StatCard";
+import ProtectedRoute from "@/Components/ProtectedRoute";
 import { users, requests, funding } from "@/data/adminMock";
 import { FiUsers, FiDollarSign, FiDroplet, FiHeart, FiTrendingUp } from "react-icons/fi";
 import { LineChart, Line, PieChart, Pie, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts";
@@ -171,7 +172,8 @@ export default function AdminDashboard() {
   const totalFunding = funding.reduce((sum, f) => sum + f.amount, 0);
 
   return (
-    <div>
+    <ProtectedRoute requiredRole="admin">
+      <div>
       {/* Welcome Section */}
       <div className="mb-8 pb-6 border-b border-slate-200">
         <h1 className="text-4xl font-black bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">Welcome Back, Admin 👋</h1>
@@ -297,6 +299,7 @@ export default function AdminDashboard() {
           </table>
         </div>
       </div>
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 }

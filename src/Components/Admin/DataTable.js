@@ -18,7 +18,7 @@ export default function DataTable({ columns = [], data = [] }) {
             </tr>
           ) : (
             data.map((row, idx) => (
-              <tr key={row.id} className={`border-b border-slate-100 hover:bg-slate-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'}`}>
+              <tr key={row._id || row.id || idx} className={`border-b border-slate-100 hover:bg-slate-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'}`}>
                 {columns.map((col) => (
                   <td key={col.key} className="px-6 py-4 align-top text-slate-700">{col.render ? col.render(row) : row[col.key]}</td>
                 ))}

@@ -120,7 +120,7 @@ export default function DonationDetailsPage() {
     return (
       <div className="rounded-xl border border-slate-100 bg-white p-10 text-center shadow-sm">
         <h1 className="text-2xl font-black text-slate-900">Donation record not found</h1>
-        <Link href="/admin/all-donations" className="mt-5 inline-flex rounded-lg bg-red-600 px-5 py-3 text-sm font-black text-white">Back to All Donations</Link>
+        <Link href="/dashboard/admin/all-donations" className="mt-5 inline-flex rounded-lg bg-red-600 px-5 py-3 text-sm font-black text-white">Back to All Donations</Link>
       </div>
     );
   }
@@ -133,7 +133,7 @@ export default function DonationDetailsPage() {
 
   const handleDelete = () => {
     toast.success("Donation request deleted");
-    router.push("/admin/all-donations");
+    router.push("/dashboard/admin/all-donations");
   };
 
   return (
@@ -230,7 +230,7 @@ export default function DonationDetailsPage() {
         </div>
       </div>
 
-      <Link href="/admin/all-donations" className="mt-6 inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm hover:bg-slate-50">
+      <Link href="/dashboard/admin/all-donations" className="mt-6 inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm hover:bg-slate-50">
         <FiArrowLeft /> Back to All Donations
       </Link>
     </div>
