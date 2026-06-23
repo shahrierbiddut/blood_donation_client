@@ -40,6 +40,29 @@ const donationService = {
     return response.data;
   },
 
+  adminGetAll: async ({ status = "all", search = "", page = 1, limit = 100 } = {}) => {
+    const params = new URLSearchParams({ status, page, limit });
+    if (search) params.append("search", search);
+    const query = params.toString();
+
+    try {
+      const response = await api.get(`/admin/donations?${query}`);
+      return response.data;
+    } catch (error) {
+      if (error.response?.status !== 404) throw error;
+
+      try {
+        const response = await api.get(`/donations/admin/all?${query}`);
+        return response.data;
+      } catch (fallbackError) {
+        if (fallbackError.response?.status !== 404) throw fallbackError;
+
+        const publicResponse = await api.get(`/donations?page=${page}&limit=${limit}`);
+        return publicResponse.data;
+      }
+    }
+  },
+
   adminUpdateStatus: async (id, payload) => {
     const response = await api.put(`/admin/donations/${id}/status`, payload);
     return response.data;

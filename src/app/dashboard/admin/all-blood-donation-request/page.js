@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import StatusBadge from "@/Components/Admin/StatusBadge";
-import { requests as mockRequests } from "@/data/adminMock";
 import {
   FiCalendar,
   FiClock,
@@ -31,58 +30,51 @@ import donationService from "@/services/donationService";
 
 const emptyDonor = { name: "", email: "", phone: "", avatar: "", bloodGroup: "", lastDonation: "", totalDonations: 0 };
 const objectIdRegex = /^[0-9a-fA-F]{24}$/;
-const REQUEST_STORAGE_KEY = "blood_donation_admin_request_overrides";
-const DELETED_REQUEST_STORAGE_KEY = "blood_donation_admin_deleted_requests";
 
 const getRequestKey = (request) => request?._id || request?.id;
 
-const getRequestOverrides = () => {
-  if (typeof window === "undefined") return {};
-
-  try {
-    return JSON.parse(localStorage.getItem(REQUEST_STORAGE_KEY) || "{}");
-  } catch {
-    return {};
-  }
+const formatDate = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toISOString().split("T")[0];
 };
 
-const getDeletedRequestIds = () => {
-  if (typeof window === "undefined") return [];
-
-  try {
-    return JSON.parse(localStorage.getItem(DELETED_REQUEST_STORAGE_KEY) || "[]");
-  } catch {
-    return [];
-  }
+const formatDateTime = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("en-US", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
 };
 
-const applySavedRequests = (items) => {
-  const overrides = getRequestOverrides();
-  const deletedIds = new Set(getDeletedRequestIds());
+const normalizeRequest = (request) => {
+  if (!request) return null;
 
-  return items
-    .filter((item) => !deletedIds.has(getRequestKey(item)))
-    .map((item) => {
-      const key = getRequestKey(item);
-      return overrides[key] ? { ...item, ...overrides[key] } : item;
-    });
-};
-
-const saveRequestOverride = (request) => {
-  if (typeof window === "undefined") return;
-  const key = getRequestKey(request);
-  if (!key) return;
-
-  const overrides = getRequestOverrides();
-  localStorage.setItem(REQUEST_STORAGE_KEY, JSON.stringify({ ...overrides, [key]: request }));
-};
-
-const saveDeletedRequest = (requestId) => {
-  if (typeof window === "undefined" || !requestId) return;
-
-  const deletedIds = new Set(getDeletedRequestIds());
-  deletedIds.add(requestId);
-  localStorage.setItem(DELETED_REQUEST_STORAGE_KEY, JSON.stringify([...deletedIds]));
+  return {
+    ...request,
+    id: request._id || request.id,
+    hospital: request.hospitalName || request.hospital || "",
+    message: request.requestMessage || request.message || "",
+    donationDate: formatDate(request.donationDate),
+    createdAt: formatDateTime(request.createdAt),
+    updatedAt: formatDateTime(request.updatedAt),
+    recipientAvatar: request.recipientAvatar || request.requester?.avatar || "",
+    recipientEmail: request.recipientEmail || request.requester?.email || "",
+    recipientPhone: request.recipientPhone || request.requester?.phone || "",
+    donor: request.donor
+      ? {
+          ...request.donor,
+          id: request.donor._id || request.donor.id,
+          lastDonation: formatDate(request.donor.lastDonationDate || request.donor.lastDonation)
+        }
+      : null
+  };
 };
 
 function Avatar({ name, src, size = "h-10 w-10" }) {
@@ -186,23 +178,56 @@ const normalizeUpdatedRequest = (currentRequest, apiRequest) => {
 
   return {
     ...currentRequest,
-    ...apiRequest,
-    id: apiRequest._id || currentRequest.id,
-    hospital: apiRequest.hospitalName ?? currentRequest.hospital,
-    message: apiRequest.requestMessage ?? currentRequest.message,
-    donationDate: apiRequest.donationDate
-      ? new Date(apiRequest.donationDate).toISOString().split("T")[0]
-      : currentRequest.donationDate
+    ...normalizeRequest(apiRequest)
   };
 };
 
 export default function AllBloodDonationRequestsPage() {
-  const [requests, setRequests] = useState(() => applySavedRequests(Array.isArray(mockRequests) ? mockRequests.filter(Boolean) : []));
+  const [requests, setRequests] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [editingRequest, setEditingRequest] = useState(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadRequests = async () => {
+      setIsLoading(true);
+      setLoadError("");
+
+      try {
+        const response = await donationService.adminGetAll({ limit: 500 });
+        const apiRequests = Array.isArray(response?.data)
+          ? response.data
+          : response?.data?.requests || [];
+        const nextRequests = apiRequests.map(normalizeRequest).filter(Boolean);
+
+        if (isMounted) {
+          setRequests(nextRequests);
+        }
+      } catch (error) {
+        const message = error?.response?.data?.message || error?.message || "Failed to load donation requests";
+        if (isMounted) {
+          setLoadError(message);
+          toast.error(message);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadRequests();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const filteredRequests = requests.filter((r) => {
     if (!r) return false;
@@ -214,37 +239,24 @@ export default function AllBloodDonationRequestsPage() {
     return matchesSearch && matchesStatus;
   });
 
-  const handleDeleteRequest = (requestId) => {
-    setRequests((items) => items.filter((r) => getRequestKey(r) !== requestId));
-    saveDeletedRequest(requestId);
-    if (getRequestKey(selectedRequest) === requestId) setSelectedRequest(null);
-    if (getRequestKey(editingRequest) === requestId) setEditingRequest(null);
-    toast.success("Request deleted successfully");
+  const handleDeleteRequest = async (requestId) => {
+    if (!requestId) return;
+
+    try {
+      await donationService.remove(requestId);
+      setRequests((items) => items.filter((r) => getRequestKey(r) !== requestId));
+      if (getRequestKey(selectedRequest) === requestId) setSelectedRequest(null);
+      if (getRequestKey(editingRequest) === requestId) setEditingRequest(null);
+      toast.success("Request deleted successfully");
+    } catch (error) {
+      const message = error?.response?.data?.message || error?.message || "Failed to delete request";
+      toast.error(message);
+    }
   };
 
   const handleQuickStatusUpdate = async (requestId, newStatus) => {
     if (!requestId || isUpdatingStatus) return;
-
-    if (!objectIdRegex.test(requestId)) {
-      const currentRequest = requests.find((r) => getRequestKey(r) === requestId);
-      const updatedRequest = {
-        ...currentRequest,
-        status: newStatus,
-        updatedAt: new Date().toLocaleString("en-US", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit"
-        })
-      };
-
-      saveRequestOverride(updatedRequest);
-      setRequests((items) => items.map((item) => (getRequestKey(item) === requestId ? updatedRequest : item)));
-      setSelectedRequest(updatedRequest);
-      toast.success("Status updated successfully");
-      return;
-    }
+    if (!objectIdRegex.test(requestId)) return;
 
     setIsUpdatingStatus(true);
     try {
@@ -259,7 +271,6 @@ export default function AllBloodDonationRequestsPage() {
         response?.data
       );
 
-      saveRequestOverride(updatedRequest);
       setRequests((items) => items.map((item) => (getRequestKey(item) === requestId ? updatedRequest : item)));
       setSelectedRequest(updatedRequest);
       toast.success("Status updated successfully");
@@ -313,35 +324,36 @@ export default function AllBloodDonationRequestsPage() {
     const cleanedDonor = editingRequest.donor?.name ? editingRequest.donor : null;
     let nextRequest = { ...editingRequest, donor: cleanedDonor };
 
-    if (requestId && objectIdRegex.test(requestId)) {
-      try {
-        const payload = {
-          recipientName: editingRequest.recipientName,
-          district: editingRequest.district,
-          upazila: editingRequest.upazila,
-          hospitalName: editingRequest.hospital || editingRequest.hospitalName,
-          bloodGroup: editingRequest.bloodGroup,
-          donationDate: editingRequest.donationDate,
-          donationTime: editingRequest.donationTime,
-          requestMessage: editingRequest.message || editingRequest.requestMessage,
-          status: editingRequest.status,
-          cancellationReason: editingRequest.status === "cancelled" ? (editingRequest.cancellationReason || "Cancelled by admin") : null
-        };
+    if (!requestId || !objectIdRegex.test(requestId)) return;
 
-        if (editingRequest.donor?._id) {
-          payload.donor = editingRequest.donor._id;
-        }
+    try {
+      const payload = {
+        recipientName: editingRequest.recipientName,
+        district: editingRequest.district,
+        upazila: editingRequest.upazila,
+        hospitalName: editingRequest.hospital || editingRequest.hospitalName,
+        bloodGroup: editingRequest.bloodGroup,
+        donationDate: editingRequest.donationDate,
+        donationTime: editingRequest.donationTime,
+        requestMessage: editingRequest.message || editingRequest.requestMessage,
+        status: editingRequest.status,
+        cancellationReason: editingRequest.status === "cancelled" ? (editingRequest.cancellationReason || "Cancelled by admin") : null
+      };
 
-        const response = await donationService.adminUpdate(requestId, payload);
-        nextRequest = normalizeUpdatedRequest(nextRequest, response?.data);
-      } catch (error) {
-        const message = error?.response?.data?.message || error?.message || "Failed to update request";
-        toast.error(message);
-        return;
+      if (editingRequest.donor?._id) {
+        payload.donor = editingRequest.donor._id;
+      } else if (!cleanedDonor) {
+        payload.donor = null;
       }
+
+      const response = await donationService.adminUpdate(requestId, payload);
+      nextRequest = normalizeUpdatedRequest(nextRequest, response?.data);
+    } catch (error) {
+      const message = error?.response?.data?.message || error?.message || "Failed to update request";
+      toast.error(message);
+      return;
     }
 
-    saveRequestOverride(nextRequest);
     setRequests((items) => items.map((item) => (getRequestKey(item) === requestId ? nextRequest : item)));
     setSelectedRequest(nextRequest);
     setEditingRequest(null);
@@ -401,7 +413,25 @@ export default function AllBloodDonationRequestsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filteredRequests.map((request, index) => (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">
+                    Loading donation requests from server...
+                  </td>
+                </tr>
+              ) : loadError ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-10 text-center text-sm font-semibold text-red-600">
+                    {loadError}
+                  </td>
+                </tr>
+              ) : filteredRequests.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">
+                    No donation requests found.
+                  </td>
+                </tr>
+              ) : filteredRequests.map((request, index) => (
                 <tr key={getRequestKey(request) || `request-${index}`} className="hover:bg-gray-50">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
