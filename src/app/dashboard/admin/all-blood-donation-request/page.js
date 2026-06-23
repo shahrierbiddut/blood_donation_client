@@ -27,8 +27,63 @@ import {
   FiX
 } from "react-icons/fi";
 import { toast } from "react-toastify";
+import donationService from "@/services/donationService";
 
 const emptyDonor = { name: "", email: "", phone: "", avatar: "", bloodGroup: "", lastDonation: "", totalDonations: 0 };
+const objectIdRegex = /^[0-9a-fA-F]{24}$/;
+const REQUEST_STORAGE_KEY = "blood_donation_admin_request_overrides";
+const DELETED_REQUEST_STORAGE_KEY = "blood_donation_admin_deleted_requests";
+
+const getRequestKey = (request) => request?._id || request?.id;
+
+const getRequestOverrides = () => {
+  if (typeof window === "undefined") return {};
+
+  try {
+    return JSON.parse(localStorage.getItem(REQUEST_STORAGE_KEY) || "{}");
+  } catch {
+    return {};
+  }
+};
+
+const getDeletedRequestIds = () => {
+  if (typeof window === "undefined") return [];
+
+  try {
+    return JSON.parse(localStorage.getItem(DELETED_REQUEST_STORAGE_KEY) || "[]");
+  } catch {
+    return [];
+  }
+};
+
+const applySavedRequests = (items) => {
+  const overrides = getRequestOverrides();
+  const deletedIds = new Set(getDeletedRequestIds());
+
+  return items
+    .filter((item) => !deletedIds.has(getRequestKey(item)))
+    .map((item) => {
+      const key = getRequestKey(item);
+      return overrides[key] ? { ...item, ...overrides[key] } : item;
+    });
+};
+
+const saveRequestOverride = (request) => {
+  if (typeof window === "undefined") return;
+  const key = getRequestKey(request);
+  if (!key) return;
+
+  const overrides = getRequestOverrides();
+  localStorage.setItem(REQUEST_STORAGE_KEY, JSON.stringify({ ...overrides, [key]: request }));
+};
+
+const saveDeletedRequest = (requestId) => {
+  if (typeof window === "undefined" || !requestId) return;
+
+  const deletedIds = new Set(getDeletedRequestIds());
+  deletedIds.add(requestId);
+  localStorage.setItem(DELETED_REQUEST_STORAGE_KEY, JSON.stringify([...deletedIds]));
+};
 
 function Avatar({ name, src, size = "h-10 w-10" }) {
   if (src) {
@@ -126,12 +181,28 @@ function TimelineStep({ active, accent, title, subtitle }) {
   );
 }
 
+const normalizeUpdatedRequest = (currentRequest, apiRequest) => {
+  if (!apiRequest) return currentRequest;
+
+  return {
+    ...currentRequest,
+    ...apiRequest,
+    id: apiRequest._id || currentRequest.id,
+    hospital: apiRequest.hospitalName ?? currentRequest.hospital,
+    message: apiRequest.requestMessage ?? currentRequest.message,
+    donationDate: apiRequest.donationDate
+      ? new Date(apiRequest.donationDate).toISOString().split("T")[0]
+      : currentRequest.donationDate
+  };
+};
+
 export default function AllBloodDonationRequestsPage() {
-  const [requests, setRequests] = useState(() => (Array.isArray(mockRequests) ? mockRequests.filter(Boolean) : []));
+  const [requests, setRequests] = useState(() => applySavedRequests(Array.isArray(mockRequests) ? mockRequests.filter(Boolean) : []));
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [editingRequest, setEditingRequest] = useState(null);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   const filteredRequests = requests.filter((r) => {
     if (!r) return false;
@@ -144,10 +215,60 @@ export default function AllBloodDonationRequestsPage() {
   });
 
   const handleDeleteRequest = (requestId) => {
-    setRequests((items) => items.filter((r) => r.id !== requestId));
-    if (selectedRequest?.id === requestId) setSelectedRequest(null);
-    if (editingRequest?.id === requestId) setEditingRequest(null);
+    setRequests((items) => items.filter((r) => getRequestKey(r) !== requestId));
+    saveDeletedRequest(requestId);
+    if (getRequestKey(selectedRequest) === requestId) setSelectedRequest(null);
+    if (getRequestKey(editingRequest) === requestId) setEditingRequest(null);
     toast.success("Request deleted successfully");
+  };
+
+  const handleQuickStatusUpdate = async (requestId, newStatus) => {
+    if (!requestId || isUpdatingStatus) return;
+
+    if (!objectIdRegex.test(requestId)) {
+      const currentRequest = requests.find((r) => getRequestKey(r) === requestId);
+      const updatedRequest = {
+        ...currentRequest,
+        status: newStatus,
+        updatedAt: new Date().toLocaleString("en-US", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit"
+        })
+      };
+
+      saveRequestOverride(updatedRequest);
+      setRequests((items) => items.map((item) => (getRequestKey(item) === requestId ? updatedRequest : item)));
+      setSelectedRequest(updatedRequest);
+      toast.success("Status updated successfully");
+      return;
+    }
+
+    setIsUpdatingStatus(true);
+    try {
+      const payload = {
+        status: newStatus,
+        ...(newStatus === "cancelled" ? { cancellationReason: "Cancelled by admin" } : {})
+      };
+
+      const response = await donationService.adminUpdateStatus(requestId, payload);
+      const updatedRequest = normalizeUpdatedRequest(
+        requests.find(r => getRequestKey(r) === requestId),
+        response?.data
+      );
+
+      saveRequestOverride(updatedRequest);
+      setRequests((items) => items.map((item) => (getRequestKey(item) === requestId ? updatedRequest : item)));
+      setSelectedRequest(updatedRequest);
+      toast.success("Status updated successfully");
+    } catch (error) {
+      const message = error?.response?.data?.message || error?.message || "Failed to update status";
+      toast.error(message);
+    } finally {
+      setIsUpdatingStatus(false);
+    }
   };
 
   const handleEditChange = (event) => {
@@ -184,13 +305,44 @@ export default function AllBloodDonationRequestsPage() {
     reader.readAsDataURL(file);
   };
 
-  const handleSaveEdit = (event) => {
+  const handleSaveEdit = async (event) => {
     event.preventDefault();
     if (!editingRequest) return;
-    const cleanedDonor = editingRequest.donor?.name ? editingRequest.donor : null;
-    const nextRequest = { ...editingRequest, donor: cleanedDonor };
 
-    setRequests((items) => items.map((item) => (item.id === nextRequest.id ? nextRequest : item)));
+    const requestId = getRequestKey(editingRequest);
+    const cleanedDonor = editingRequest.donor?.name ? editingRequest.donor : null;
+    let nextRequest = { ...editingRequest, donor: cleanedDonor };
+
+    if (requestId && objectIdRegex.test(requestId)) {
+      try {
+        const payload = {
+          recipientName: editingRequest.recipientName,
+          district: editingRequest.district,
+          upazila: editingRequest.upazila,
+          hospitalName: editingRequest.hospital || editingRequest.hospitalName,
+          bloodGroup: editingRequest.bloodGroup,
+          donationDate: editingRequest.donationDate,
+          donationTime: editingRequest.donationTime,
+          requestMessage: editingRequest.message || editingRequest.requestMessage,
+          status: editingRequest.status,
+          cancellationReason: editingRequest.status === "cancelled" ? (editingRequest.cancellationReason || "Cancelled by admin") : null
+        };
+
+        if (editingRequest.donor?._id) {
+          payload.donor = editingRequest.donor._id;
+        }
+
+        const response = await donationService.adminUpdate(requestId, payload);
+        nextRequest = normalizeUpdatedRequest(nextRequest, response?.data);
+      } catch (error) {
+        const message = error?.response?.data?.message || error?.message || "Failed to update request";
+        toast.error(message);
+        return;
+      }
+    }
+
+    saveRequestOverride(nextRequest);
+    setRequests((items) => items.map((item) => (getRequestKey(item) === requestId ? nextRequest : item)));
     setSelectedRequest(nextRequest);
     setEditingRequest(null);
     toast.success("Request updated successfully");
@@ -250,7 +402,7 @@ export default function AllBloodDonationRequestsPage() {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredRequests.map((request, index) => (
-                <tr key={request.id || `request-${index}`} className="hover:bg-gray-50">
+                <tr key={getRequestKey(request) || `request-${index}`} className="hover:bg-gray-50">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <Avatar name={request.recipientName} src={request.recipientAvatar} />
@@ -283,7 +435,7 @@ export default function AllBloodDonationRequestsPage() {
                       <button onClick={() => openEdit(request)} className="p-2 rounded-lg text-amber-600 transition hover:bg-amber-50" title="Edit">
                         <FiEdit2 size={16} />
                       </button>
-                      <button onClick={() => handleDeleteRequest(request.id)} className="p-2 rounded-lg text-red-600 transition hover:bg-red-50" title="Delete">
+                      <button onClick={() => handleDeleteRequest(getRequestKey(request))} className="p-2 rounded-lg text-red-600 transition hover:bg-red-50" title="Delete">
                         <FiTrash2 size={16} />
                       </button>
                     </div>
@@ -305,7 +457,7 @@ export default function AllBloodDonationRequestsPage() {
                 </span>
                 <div>
                   <h2 className="text-2xl font-black text-slate-900">Request Details</h2>
-                  <p className="mt-1 text-xs font-semibold text-slate-500">Request ID: #{String(selectedRequest.id || "REQ").toUpperCase()}-2026</p>
+                  <p className="mt-1 text-xs font-semibold text-slate-500">Request ID: #{String(getRequestKey(selectedRequest) || "REQ").toUpperCase()}-2026</p>
                 </div>
               </div>
               <button onClick={() => setSelectedRequest(null)} className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800">
@@ -408,6 +560,34 @@ export default function AllBloodDonationRequestsPage() {
                 )}
               </section>
             </div>
+
+            {selectedRequest && (
+              <section className="mt-5 rounded-lg border border-blue-200 bg-gradient-to-r from-blue-50 to-blue-100 p-5">
+                <div className="flex items-center gap-3 mb-3">
+                  <FiInfo className="text-blue-600" size={20} />
+                  <h3 className="text-sm font-black text-blue-900">Quick Status Update</h3>
+                </div>
+                <div className="flex items-center gap-3">
+                  <label className="flex-1">
+                    <span className="block text-xs font-bold text-blue-800 mb-2">Change Status</span>
+                    <select
+                      value={selectedRequest.status}
+                      onChange={(e) => handleQuickStatusUpdate(getRequestKey(selectedRequest), e.target.value)}
+                      disabled={isUpdatingStatus}
+                      className="w-full h-10 rounded-lg border border-blue-300 bg-white px-4 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="inprogress">In Progress</option>
+                      <option value="done">Done</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                  </label>
+                  <div className="text-xs text-blue-700 font-medium">
+                    {isUpdatingStatus ? "Updating..." : "Select new status to update"}
+                  </div>
+                </div>
+              </section>
+            )}
 
             <section className="mt-5 rounded-lg border border-slate-200 p-5">
               <SectionTitle icon={FiFileText}>Request Timeline</SectionTitle>

@@ -379,7 +379,7 @@ export default function AllUsersPage() {
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             {/* Header */}
             <div className="sticky top-0 flex justify-between items-center p-6 border-b border-gray-200 bg-white">
-              <h2 className="text-xl font-bold text-gray-900">{selectedUser.name}'s Profile</h2>
+              <h2 className="text-xl font-bold text-gray-900">{selectedUser.name}&apos;s Profile</h2>
               <button
                 onClick={handleCloseProfile}
                 className="p-2 hover:bg-gray-100 rounded-lg transition"

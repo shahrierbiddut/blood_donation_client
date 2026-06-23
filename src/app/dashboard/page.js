@@ -15,10 +15,11 @@ function DashboardRoleRouter() {
 
     if (user.role === "admin") {
       router.replace("/dashboard/admin");
-      return;
+    } else if (user.role === "volunteer") {
+      router.replace("/dashboard/volunteer");
+    } else {
+      router.replace("/dashboard/user");
     }
-
-    router.replace("/dashboard/user");
   }, [loading, user, router]);
 
   return (

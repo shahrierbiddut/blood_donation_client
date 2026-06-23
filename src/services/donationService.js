@@ -35,6 +35,21 @@ const donationService = {
     return response.data;
   },
 
+  adminUpdate: async (id, payload) => {
+    const response = await api.put(`/admin/donations/${id}`, payload);
+    return response.data;
+  },
+
+  adminUpdateStatus: async (id, payload) => {
+    const response = await api.put(`/admin/donations/${id}/status`, payload);
+    return response.data;
+  },
+
+  volunteerUpdateStatus: async (id, payload) => {
+    const response = await api.put(`/donations/${id}/volunteer-status`, payload);
+    return response.data;
+  },
+
   accept: async (id) => {
     try {
       const response = await api.post(`/donations/${id}/donate`);
