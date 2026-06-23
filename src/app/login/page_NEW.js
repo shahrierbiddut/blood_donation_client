@@ -72,7 +72,7 @@ export default function LoginPage() {
       toast.dismiss();
       toast.success("Login successful! Redirecting...");
       // Redirect based on user role
-      const redirectPath = res.user?.role === "admin" ? "/admin" : "/dashboard";
+      const redirectPath = res.user?.role === "admin" ? "/dashboard/admin" : "/dashboard";
       setTimeout(() => router.push(redirectPath), 1500);
     } catch (err) {
       toast.dismiss();

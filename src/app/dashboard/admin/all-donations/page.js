@@ -175,7 +175,7 @@ export default function AllDonationsPage() {
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-2">
                       <button onClick={() => setSelectedDonation(donation)} className="rounded-lg p-2 text-blue-600 hover:bg-blue-50" title="View"><FiEye /></button>
-                      <Link href={`/admin/all-donations/${donation.id}`} className="rounded-lg p-2 text-slate-600 hover:bg-slate-100" title="Edit donation"><FiEdit2 /></Link>
+                      <Link href={`/dashboard/admin/all-donations/${donation.id}`} className="rounded-lg p-2 text-slate-600 hover:bg-slate-100" title="Edit donation"><FiEdit2 /></Link>
                       <button onClick={() => handleDelete(donation.id)} className="rounded-lg p-2 text-red-600 hover:bg-red-50" title="Delete"><FiTrash2 /></button>
                     </div>
                   </td>

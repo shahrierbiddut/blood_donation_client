@@ -45,15 +45,15 @@ export default function AdminSidebar() {
   const isActive = (path) => pathname === path;
 
   const navItems = [
-    { path: "/admin", label: "Dashboard", icon: FiHome },
-    { path: "/admin/all-users", label: "All Users", icon: FiUsers },
-    { path: "/admin/all-blood-donation-request", label: "All Blood Donation Requests", icon: FiDroplet },
-    { path: "/admin/manage-volunteers", label: "Manage Volunteers", icon: FiHeart },
-    { path: "/admin/manage-admins", label: "Manage Admins", icon: FiShield },
-    { path: "/admin/all-donations", label: "All Donations", icon: FiGift },
-    { path: "/admin/payments", label: "Payments", icon: FiCreditCard },
-    { path: "/admin/reports", label: "Reports", icon: FiFileText },
-    { path: "/admin/settings", label: "Settings", icon: FiSettings }
+    { path: "/dashboard/admin", label: "Dashboard", icon: FiHome },
+    { path: "/dashboard/admin/all-users", label: "All Users", icon: FiUsers },
+    { path: "/dashboard/admin/all-blood-donation-request", label: "All Blood Donation Requests", icon: FiDroplet },
+    { path: "/dashboard/admin/manage-volunteers", label: "Manage Volunteers", icon: FiHeart },
+    { path: "/dashboard/admin/manage-admins", label: "Manage Admins", icon: FiShield },
+    { path: "/dashboard/admin/all-donations", label: "All Donations", icon: FiGift },
+    { path: "/dashboard/admin/payments", label: "Payments", icon: FiCreditCard },
+    { path: "/dashboard/admin/reports", label: "Reports", icon: FiFileText },
+    { path: "/dashboard/admin/settings", label: "Settings", icon: FiSettings }
   ];
 
   return (
