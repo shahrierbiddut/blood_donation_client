@@ -21,22 +21,14 @@ const STATUS_STYLE = {
 const STATUS_LABEL = { pending: "Pending", inprogress: "In Progress", done: "Done", cancelled: "Cancelled" };
 const PAGE_SIZE = 12;
 
-const filterRequests = (items, filters) => items.filter((item) => {
+const filterRequests = (items, filters, acceptedMockIds = []) => items.filter((item) => {
+  if (acceptedMockIds.includes(item._id)) return false;
   if (item.status !== "pending") return false;
   const bloodMatch = filters.bloodGroup === "All" || item.bloodGroup === filters.bloodGroup;
   const districtMatch = filters.district === "All" || item.district?.toLowerCase().includes(filters.district.toLowerCase());
   const upazilaMatch = filters.upazila === "All" || item.upazila?.toLowerCase().includes(filters.upazila.toLowerCase());
   return bloodMatch && districtMatch && upazilaMatch;
 });
-
-const mergeRequests = (apiItems = [], mockItems = []) => {
-  const seen = new Set();
-  return [...apiItems, ...mockItems].filter((item) => {
-    if (!item?._id || seen.has(item._id)) return false;
-    seen.add(item._id);
-    return true;
-  });
-};
 
 function AvatarFallback({ name, avatar }) {
   if (avatar) {
@@ -201,12 +193,13 @@ export default function DonationRequestsPage() {
     const fetchData = async () => {
       setLoading(true);
         setError("");
+        const acceptedMockIds = donationService.getAcceptedMockIds();
         try {
           const res = await donationService.getAll({ ...applied, page: 1, limit: 100 });
           if (res?.success) {
-            const combined = filterRequests(mergeRequests(res.data || [], mockDonationRequests), applied);
+            const combined = filterRequests(res.data || [], applied, acceptedMockIds);
             const start = (page - 1) * PAGE_SIZE;
-            setUsingMockData(true);
+            setUsingMockData(false);
             setRequests(combined.slice(start, start + PAGE_SIZE));
             setPagination({
               total: combined.length,
@@ -215,7 +208,7 @@ export default function DonationRequestsPage() {
               limit: PAGE_SIZE
             });
           } else {
-            const filtered = filterRequests(mockDonationRequests, applied);
+            const filtered = filterRequests(mockDonationRequests, applied, acceptedMockIds);
             const start = (page - 1) * PAGE_SIZE;
             const paged = filtered.slice(start, start + PAGE_SIZE);
             setUsingMockData(true);
@@ -228,7 +221,7 @@ export default function DonationRequestsPage() {
             });
           }
       } catch {
-        const filtered = filterRequests(mockDonationRequests, applied);
+        const filtered = filterRequests(mockDonationRequests, applied, donationService.getAcceptedMockIds());
         const start = (page - 1) * PAGE_SIZE;
         const paged = filtered.slice(start, start + PAGE_SIZE);
         setUsingMockData(true);

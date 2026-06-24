@@ -64,10 +64,12 @@ export default function DonationRequestDetailsPage() {
         if (res.success && res.data) {
           setRequest(res.data);
         } else {
-          setRequest(mockDonationRequests.find((item) => item._id === id) || null);
+          const mockRequest = mockDonationRequests.find((item) => item._id === id) || null;
+          setRequest(mockRequest && donationService.getAcceptedMockIds().includes(mockRequest._id) ? { ...mockRequest, status: "inprogress" } : mockRequest);
         }
       } catch {
-        setRequest(mockDonationRequests.find((item) => item._id === id) || null);
+        const mockRequest = mockDonationRequests.find((item) => item._id === id) || null;
+        setRequest(mockRequest && donationService.getAcceptedMockIds().includes(mockRequest._id) ? { ...mockRequest, status: "inprogress" } : mockRequest);
       } finally {
         setLoading(false);
       }
@@ -112,6 +114,7 @@ export default function DonationRequestDetailsPage() {
     }
 
     if (String(request._id).startsWith("mock-")) {
+      donationService.markMockAccepted(request._id);
       setRequest((prev) => ({ ...prev, status: "inprogress" }));
       showToast("success", "Demo request accepted. Status changed to in progress.");
       return;

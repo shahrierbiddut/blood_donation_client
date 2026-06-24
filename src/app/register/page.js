@@ -25,8 +25,9 @@ import { useAuth } from "@/context/AuthContext";
 import locationService from "@/services/locationService";
 import uploadService from "@/services/uploadService";
 import bannerImage from "../../../Assets/Blood.png";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+// import { toast, ToastContainer } from "react-toastify";
+// import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-hot-toast";
 
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
@@ -166,7 +167,7 @@ export default function RegisterPage() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState("");
-  const [toast, setToast] = useState({ type: "", message: "", visible: false });
+  const [notificationState, setNotificationState] = useState({ type: "", message: "", visible: false });
 
   const [divisions, setDivisions] = useState([]);
   const [districts, setDistricts] = useState([]);
@@ -302,9 +303,9 @@ export default function RegisterPage() {
   }, [selectedIds.upazilaId]);
 
   const showSuccessToast = (message) => {
-    setToast({ type: "success", message, visible: true });
+    setNotificationState({ type: "success", message, visible: true });
     setTimeout(() => {
-      setToast({ type: "", message: "", visible: false });
+      setNotificationState({ type: "", message: "", visible: false });
     }, 2200);
   };
 
@@ -510,7 +511,7 @@ export default function RegisterPage() {
       };
 
       await register(payload);
-      toast.dismiss();
+      // toast.dismiss();
       toast.success("Account created successfully! Redirecting...");
       setTimeout(() => {
         router.push("/");
@@ -527,9 +528,9 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen bg-[#FFF5F5] px-3 py-6 sm:px-6 lg:px-8">
-      {toast.visible ? (
+      {notificationState.visible ? (
         <div className="fixed right-4 top-4 z-50 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 shadow-lg">
-          {toast.message}
+          {notificationState.message}
         </div>
       ) : null}
 

@@ -1,5 +1,18 @@
 import api from "./api";
 
+const ACCEPTED_MOCK_REQUESTS_KEY = "blood_donation_accepted_mock_requests";
+
+const getAcceptedMockIds = () => {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const parsed = JSON.parse(localStorage.getItem(ACCEPTED_MOCK_REQUESTS_KEY) || "[]");
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
 const donationService = {
   getAll: async ({ bloodGroup = "", district = "", upazila = "", page = 1, limit = 100 } = {}) => {
     const params = new URLSearchParams({ page, limit });
@@ -17,6 +30,11 @@ const donationService = {
 
   getMy: async () => {
     const response = await api.get("/donations/user/my");
+    return response.data;
+  },
+
+  getMyInProgress: async () => {
+    const response = await api.get("/donations/user/in-progress");
     return response.data;
   },
 
@@ -85,6 +103,16 @@ const donationService = {
       const response = await api.put(`/donations/${id}`, { status: "inprogress" });
       return response.data;
     }
+  },
+
+  getAcceptedMockIds,
+
+  markMockAccepted: (id) => {
+    if (typeof window === "undefined" || !id) return;
+
+    const current = getAcceptedMockIds();
+    if (current.includes(id)) return;
+    localStorage.setItem(ACCEPTED_MOCK_REQUESTS_KEY, JSON.stringify([...current, id]));
   },
 
   remove: async (id) => {

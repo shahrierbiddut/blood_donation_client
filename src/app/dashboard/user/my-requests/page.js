@@ -7,7 +7,7 @@ import Navbar from "@/Components/Shared/Navbar";
 import Footer from "@/Components/Shared/Footer";
 import donationService from "@/services/donationService";
 import mockDonationRequests from "@/data/mockDonationRequests";
-import { FiChevronLeft, FiChevronRight, FiCheckCircle, FiClock, FiDroplet, FiMapPin, FiMoreHorizontal, FiPhone, FiXCircle, FiEdit, FiEye } from "react-icons/fi";
+import { FiChevronLeft, FiChevronRight, FiCheckCircle, FiClock, FiDroplet, FiMoreHorizontal, FiXCircle, FiEdit, FiEye } from "react-icons/fi";
 
 const statusMeta = {
   pending: {
@@ -240,9 +240,14 @@ function MyRequestsContent() {
             <h1 className="text-3xl font-black text-slate-900">My <span className="text-red-600">Donation Requests</span></h1>
             <p className="text-sm text-slate-500">Manage and track your blood donation posts.</p>
           </div>
-          <Link href="/dashboard/create-request" className="w-fit rounded-xl bg-red-600 px-5 py-3 text-sm font-black text-white transition hover:bg-red-700">
-            Create Request
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/dashboard/user/in-progress" className="w-fit rounded-xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm font-black text-amber-700 transition hover:bg-amber-100">
+              In Progress
+            </Link>
+            <Link href="/dashboard/user/create-request" className="w-fit rounded-xl bg-red-600 px-5 py-3 text-sm font-black text-white transition hover:bg-red-700">
+              Create Request
+            </Link>
+          </div>
         </div>
 
         {/* Status Filter Dropdown */}

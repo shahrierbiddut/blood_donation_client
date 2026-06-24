@@ -37,7 +37,7 @@ function InfoField({ label, value }) {
   );
 }
 
-function EditField({ label, name, value, onChange, type = "text", disabled = false, options }) {
+function EditField({ label, name, value, onChange, type = "text", disabled = false, options, placeholder }) {
   const baseClass = "mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-red-400 disabled:bg-slate-100 disabled:text-slate-500";
 
   return (
@@ -50,7 +50,7 @@ function EditField({ label, name, value, onChange, type = "text", disabled = fal
           ))}
         </select>
       ) : (
-        <input name={name} type={type} value={value} onChange={onChange} disabled={disabled} className={baseClass} />
+        <input name={name} type={type} value={value} onChange={onChange} disabled={disabled} placeholder={placeholder} className={baseClass} />
       )}
     </label>
   );
@@ -90,13 +90,32 @@ function ProfileContent() {
     setMessage("");
 
     try {
+      // Validate required fields
+      const requiredFields = ["name", "bloodGroup", "division", "district", "upazila", "union"];
+      for (const field of requiredFields) {
+        if (!form[field] || !String(form[field]).trim()) {
+          throw new Error(`${field} is required`);
+        }
+      }
+
       const { email, ...payload } = form;
+      
+      // Log the payload for debugging
+      console.log("Submitting profile update:", payload);
+      
       const response = await updateProfile(payload);
+      console.log("Profile update response:", response);
+      
       setMessage(response?.message || "Profile updated successfully.");
       setDraft(null);
       setIsEditing(false);
+      
+      // Show success for 3 seconds then clear
+      setTimeout(() => setMessage(""), 3000);
     } catch (err) {
-      setError(err.message || "Profile update failed.");
+      const errorMsg = err.message || err?.message || "Profile update failed.";
+      console.error("Profile update error:", err);
+      setError(errorMsg);
     } finally {
       setSaving(false);
     }
@@ -183,8 +202,8 @@ function ProfileContent() {
                     <>
                       <EditField label="Full Name" name="name" value={form.name} onChange={handleChange} />
                       <EditField label="Email" name="email" value={form.email} onChange={handleChange} disabled />
-                      <EditField label="Phone" name="phone" value={form.phone} onChange={handleChange} />
-                      <EditField label="Avatar URL" name="avatar" value={form.avatar} onChange={handleChange} />
+                      <EditField label="Phone" name="phone" value={form.phone} onChange={handleChange} placeholder="+880..." />
+                      <EditField label="Avatar URL" name="avatar" value={form.avatar} onChange={handleChange} placeholder="https://example.com/image.jpg" />
                     </>
                   ) : (
                     <>
