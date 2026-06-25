@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { FiMoreVertical, FiLock, FiUnlock, FiUser, FiShield, FiEye, FiX } from "react-icons/fi";
+import Image from "next/image";
+import { useState, useEffect, useMemo } from "react";
+import { FiChevronLeft, FiChevronRight, FiMoreVertical, FiLock, FiUnlock, FiUser, FiShield, FiEye, FiX, FiSearch } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 import StatusBadge from "@/Components/Admin/StatusBadge";
-import DataTable from "@/Components/Admin/DataTable";
 import {
   getAllUsers,
   updateUserRole,
@@ -13,9 +13,62 @@ import {
   updateUserProfile,
 } from "@/services/adminService";
 
+const USERS_PER_PAGE = 10;
+const STATUS_FILTERS = [
+  { label: "All Users", value: "all" },
+  { label: "Active Users", value: "active" },
+  { label: "Blocked Users", value: "blocked" }
+];
+
+const formatJoinedDate = (value) => {
+  if (!value) return "N/A";
+  return new Date(value).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric"
+  });
+};
+
+const getVisiblePages = (currentPage, totalPages) => {
+  if (totalPages <= 5) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  const start = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
+  return Array.from({ length: 5 }, (_, index) => start + index);
+};
+
+function RoleBadge({ role }) {
+  const classes = {
+    admin: "bg-red-50 text-red-600",
+    volunteer: "bg-blue-50 text-blue-600",
+    donor: "bg-emerald-50 text-emerald-600"
+  };
+
+  return (
+    <span className={`inline-flex rounded-md px-2.5 py-1 text-xs font-bold capitalize ${classes[role] || "bg-slate-100 text-slate-600"}`}>
+      {role || "user"}
+    </span>
+  );
+}
+
+function UserAvatar({ user }) {
+  if (user?.avatar) {
+    return <Image src={user.avatar} alt={user.name || "User"} width={36} height={36} className="h-9 w-9 rounded-full object-cover" unoptimized />;
+  }
+
+  return (
+    <span className="grid h-9 w-9 place-items-center rounded-full bg-red-50 text-sm font-black text-red-600">
+      {(user?.name || "U").charAt(0).toUpperCase()}
+    </span>
+  );
+}
+
 export default function AllUsersPage() {
   const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -40,11 +93,24 @@ export default function AllUsersPage() {
     loadUsers();
   }, []);
 
-  const filteredUsers = users.filter(
-    (u) =>
-      (u.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (u.email || "").toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredUsers = useMemo(() => {
+    const query = searchTerm.toLowerCase();
+
+    return users.filter((user) => {
+      const matchesSearch =
+        (user.name || "").toLowerCase().includes(query) ||
+        (user.email || "").toLowerCase().includes(query);
+      const matchesStatus = statusFilter === "all" || user.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [users, searchTerm, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / USERS_PER_PAGE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const startIndex = filteredUsers.length === 0 ? 0 : (safeCurrentPage - 1) * USERS_PER_PAGE + 1;
+  const endIndex = Math.min(safeCurrentPage * USERS_PER_PAGE, filteredUsers.length);
+  const paginatedUsers = filteredUsers.slice((safeCurrentPage - 1) * USERS_PER_PAGE, safeCurrentPage * USERS_PER_PAGE);
+  const visiblePages = getVisiblePages(safeCurrentPage, totalPages);
 
   const handleBlockUser = async (userId) => {
     const user = users.find((u) => u._id === userId);
@@ -317,61 +383,139 @@ export default function AllUsersPage() {
     </div>
   );
 
-  const columns = [
-    {
-      key: "name",
-      title: "User",
-      render: (row) => (
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center text-red-600 font-bold text-sm">
-            {row.name.charAt(0)}
-          </div>
-          <span className="font-medium text-gray-900">{row.name}</span>
-        </div>
-      ),
-    },
-    { key: "email", title: "Email", render: (row) => <span className="text-gray-600 text-sm">{row.email}</span> },
-    { key: "bloodGroup", title: "Blood Group", render: (row) => <span className="font-semibold text-red-600">{row.bloodGroup}</span> },
-    {
-      key: "role",
-      title: "Role",
-      render: (row) => (
-        <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold capitalize ${
-          row.role === "admin"
-            ? "bg-purple-100 text-purple-700"
-            : row.role === "volunteer"
-            ? "bg-blue-100 text-blue-700"
-            : "bg-gray-100 text-gray-700"
-        }`}>
-          {row.role}
-        </span>
-      ),
-    },
-    { key: "status", title: "Status", render: (row) => <StatusBadge status={row.status} /> },
-    { key: "createdAt", title: "Joined Date", render: (row) => <span className="text-gray-600 text-sm">{row.createdAt}</span> },
-    { key: "actions", title: "Actions", render: (row) => <ActionMenu user={row} /> },
-  ];
-
   return (
     <div className="flex flex-col gap-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">All Users</h1>
-        <input
-          type="text"
-          placeholder="Search by name or email..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-        />
-      </div>
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex flex-col gap-4 border-b border-slate-100 bg-gradient-to-r from-white to-slate-50 px-5 py-5 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h1 className="text-xl font-black text-slate-900">All Users</h1>
+            <p className="mt-1 text-sm font-medium text-slate-500">Manage roles, account status, and registered user profiles.</p>
+          </div>
 
-      {/* Data Table */}
-      {isPageLoading ? (
-        <div className="text-sm text-gray-500">Loading users...</div>
-      ) : (
-        <DataTable columns={columns} data={filteredUsers} />
-      )}
+          <div className="grid gap-3 sm:grid-cols-[180px_280px]">
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-slate-500">Filter by Status</span>
+              <select
+                value={statusFilter}
+                onChange={(event) => {
+                  setStatusFilter(event.target.value);
+                  setCurrentPage(1);
+                }}
+                className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 outline-none transition focus:border-red-400"
+              >
+                {STATUS_FILTERS.map((item) => (
+                  <option key={item.value} value={item.value}>{item.label}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="relative block self-end">
+              <FiSearch className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search users..."
+                value={searchTerm}
+                onChange={(event) => {
+                  setSearchTerm(event.target.value);
+                  setCurrentPage(1);
+                }}
+                className="h-11 w-full rounded-lg border border-slate-200 bg-white px-4 pr-10 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-400"
+              />
+            </label>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto px-5 pt-5">
+          <div className="overflow-hidden rounded-xl border border-slate-100">
+          <table className="w-full min-w-[860px] text-left">
+            <thead className="bg-slate-50 text-xs font-bold text-slate-500">
+              <tr>
+                <th className="px-4 py-3">User</th>
+                <th className="px-4 py-3">Email</th>
+                <th className="px-4 py-3">Name</th>
+                <th className="px-4 py-3">Role</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Joined Date</th>
+                <th className="px-4 py-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 bg-white">
+              {isPageLoading ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">Loading users...</td>
+                </tr>
+              ) : paginatedUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">No users found for this filter.</td>
+                </tr>
+              ) : (
+                paginatedUsers.map((user) => (
+                  <tr key={user._id} className="transition hover:bg-slate-50">
+                    <td className="px-4 py-3">
+                      <UserAvatar user={user} />
+                    </td>
+                    <td className="px-4 py-3 text-sm font-medium text-slate-700">{user.email}</td>
+                    <td className="px-4 py-3 text-sm font-semibold text-slate-900">{user.name}</td>
+                    <td className="px-4 py-3"><RoleBadge role={user.role} /></td>
+                    <td className="px-4 py-3"><StatusBadge status={user.status} /></td>
+                    <td className="px-4 py-3 text-sm font-medium text-slate-600">{formatJoinedDate(user.createdAt)}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex justify-end">
+                        <ActionMenu user={user} />
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+          </div>
+        </div>
+
+        <div className="mx-5 flex flex-col gap-4 border-t border-slate-100 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm font-medium text-slate-500">
+            Showing {startIndex} to {endIndex} of {filteredUsers.length} users
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              disabled={safeCurrentPage === 1}
+              className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <FiChevronLeft />
+            </button>
+            {visiblePages[0] > 1 ? <span className="px-1 text-sm font-bold text-slate-400">...</span> : null}
+            {visiblePages.map((page) => (
+              <button
+                key={page}
+                type="button"
+                onClick={() => setCurrentPage(page)}
+                className={`h-9 min-w-9 rounded-lg px-3 text-sm font-bold transition ${
+                  safeCurrentPage === page ? "bg-red-600 text-white" : "border border-slate-200 text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+            {visiblePages[visiblePages.length - 1] < totalPages ? <span className="px-1 text-sm font-bold text-slate-400">...</span> : null}
+            <button
+              type="button"
+              onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+              disabled={safeCurrentPage === totalPages}
+              className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <FiChevronRight />
+            </button>
+          </div>
+        </div>
+
+        <div className="border-t border-slate-100 bg-slate-50/70 px-5 py-3">
+          <p className="text-center text-xs font-semibold text-slate-500">
+            User management keeps donor access, volunteer permissions, and admin controls organized in one place.
+          </p>
+        </div>
+      </section>
 
       {/* Profile Modal */}
       {selectedUser && (

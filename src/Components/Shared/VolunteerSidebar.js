@@ -46,6 +46,12 @@ export default function VolunteerSidebar() {
     router.push("/login");
   };
 
+  useEffect(() => {
+    if (user) {
+      setProfileData(getProfileFromUser(user));
+    }
+  }, [user]);
+
   const handleProfileUpdate = async () => {
     if (isAvatarProcessing) {
       setProfileError("Please wait, image is still processing.");
@@ -154,7 +160,10 @@ export default function VolunteerSidebar() {
               <p className="text-sm font-semibold">Need Help?</p>
             </div>
             <p className="text-xs text-slate-400 mb-3">Contact support team</p>
-            <button className="w-full bg-red-600 hover:bg-red-700 text-white text-xs font-semibold py-2 rounded-lg transition-colors">
+            <button
+              onClick={() => router.push("/contact")}
+              className="w-full bg-red-600 hover:bg-red-700 text-white text-xs font-semibold py-2 rounded-lg transition-colors"
+            >
               Contact Now
             </button>
           </div>

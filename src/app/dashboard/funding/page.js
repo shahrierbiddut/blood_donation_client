@@ -1,4 +1,7 @@
+/* eslint-disable */
 "use client";
+
+import FundingExperience from "./FundingExperience";
 
 import Image from "next/image";
 import { useMemo, useState, useEffect } from "react";
@@ -7,6 +10,8 @@ import api from "@/services/api";
 import Navbar from "@/Components/Shared/Navbar";
 
 export default function FundingPage() {
+  return <FundingExperience />;
+
   const [fundings, setFundings] = useState([]);
   const [totalAmount, setTotalAmount] = useState(0);
   const [showCreate, setShowCreate] = useState(false);

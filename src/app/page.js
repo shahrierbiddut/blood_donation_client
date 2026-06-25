@@ -47,12 +47,18 @@ export default function HomePage() {
             <p className="mx-auto mt-3 max-w-2xl text-red-100">
               Join BloodConnect and respond to urgent blood requests in your community.
             </p>
+            <p className="mx-auto mt-2 max-w-2xl text-sm font-semibold text-red-50">
+              You can also fund emergency donor coordination, hospital transport, and volunteer operations.
+            </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Link href="/register">
                 <Button className="bg-white px-8 font-semibold text-red-600">Join as Donor</Button>
               </Link>
               <Link href="/donation-requests">
                 <Button className="border border-white bg-transparent px-8 font-semibold text-white">Browse Requests</Button>
+              </Link>
+              <Link href="/dashboard/funding">
+                <Button className="border border-white bg-white/10 px-8 font-semibold text-white">Support the Mission</Button>
               </Link>
             </div>
           </div>

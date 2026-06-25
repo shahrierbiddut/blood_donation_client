@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   FiHome,
   FiUsers,
@@ -25,7 +25,7 @@ import {
 export default function AdminSidebar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const { user, logout, updateProfile } = useAuth();
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [profileData, setProfileData] = useState({
     name: user?.name || "Admin Rahim",
@@ -35,14 +35,56 @@ export default function AdminSidebar() {
     address: user?.address || "Dhanmondi, Dhaka",
     avatar: user?.avatar || "https://i.pravatar.cc/120?img=12"
   });
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileError, setProfileError] = useState("");
+
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        name: user.name || "Admin Rahim",
+        email: user.email || "admin@gmail.com",
+        phone: user.phone || "01700000000",
+        role: user.role || "Super Admin",
+        address: user.address || "Dhanmondi, Dhaka",
+        avatar: user.avatar || "https://i.pravatar.cc/120?img=12"
+      });
+    }
+  }, [user]);
 
   const handleLogout = async () => {
     await logout();
     router.push("/login");
   };
 
-  const handleProfileUpdate = () => {
-    setShowProfileEdit(false);
+  const handleProfileUpdate = async () => {
+    try {
+      setIsSavingProfile(true);
+      setProfileError("");
+
+      const response = await updateProfile({
+        name: profileData.name.trim(),
+        phone: profileData.phone?.trim() || "",
+        address: profileData.address?.trim() || "",
+        avatar: profileData.avatar || ""
+      });
+
+      if (response?.user) {
+        setProfileData({
+          name: response.user.name,
+          email: response.user.email,
+          phone: response.user.phone || "01700000000",
+          role: response.user.role || "Super Admin",
+          address: response.user.address || "Dhanmondi, Dhaka",
+          avatar: response.user.avatar || "https://i.pravatar.cc/120?img=12"
+        });
+      }
+
+      setShowProfileEdit(false);
+    } catch (error) {
+      setProfileError(error?.message || "Profile update failed. Please try again.");
+    } finally {
+      setIsSavingProfile(false);
+    }
   };
 
   const handleAvatarUpload = (event) => {
@@ -111,7 +153,10 @@ export default function AdminSidebar() {
               <p className="text-sm font-semibold">Need Help?</p>
             </div>
             <p className="text-xs text-slate-400 mb-3">Contact Support for assistance</p>
-            <button className="w-full bg-red-600 hover:bg-red-700 text-white text-xs font-semibold py-2 rounded-lg transition-colors">
+            <button
+              onClick={() => router.push("/contact")}
+              className="w-full bg-red-600 hover:bg-red-700 text-white text-xs font-semibold py-2 rounded-lg transition-colors"
+            >
               Contact Now
             </button>
           </div>
@@ -206,8 +251,8 @@ export default function AdminSidebar() {
                 <input
                   type="email"
                   value={profileData.email}
-                  onChange={(e) => setProfileData((prev) => ({ ...prev, email: e.target.value }))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
+                  readOnly
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-slate-50 text-slate-500 focus:outline-none"
                 />
               </div>
 
@@ -223,16 +268,10 @@ export default function AdminSidebar() {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Role
-                </label>
-                <input
-                  type="text"
-                  value={profileData.role}
-                  onChange={(e) => setProfileData((prev) => ({ ...prev, role: e.target.value }))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
-                />
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-600">
+                  <strong>Role:</strong> <span className="text-purple-600 font-semibold">{profileData.role}</span>
+                </p>
               </div>
 
               <div className="sm:col-span-2">
