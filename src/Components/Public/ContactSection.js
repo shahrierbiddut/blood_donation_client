@@ -9,6 +9,8 @@ export default function ContactSection() {
   const [form, setForm] = useState({
     name: "",
     email: "",
+    phone: "",
+    address: "",
     subject: "",
     message: ""
   });
@@ -20,6 +22,8 @@ export default function ContactSection() {
     if (!form.name.trim()) return "Name is required";
     if (!form.email.trim()) return "Email is required";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return "Please enter a valid email";
+    if (form.phone.trim() && form.phone.trim().length > 20) return "Phone number must be 20 characters or less";
+    if (form.address.trim() && form.address.trim().length > 200) return "Address must be 200 characters or less";
     if (!form.subject.trim()) return "Subject is required";
     if (form.subject.trim().length < 5) return "Subject must be at least 5 characters";
     if (!form.message.trim()) return "Message is required";
@@ -55,13 +59,16 @@ export default function ContactSection() {
       toast.dismiss();
       toast.success("✅ Thank you! Your message has been sent successfully. We'll get back to you soon!");
       setSuccess(true);
-      setForm({ name: "", email: "", subject: "", message: "" });
+      setForm({ name: "", email: "", phone: "", address: "", subject: "", message: "" });
 
       // Hide success message after 5 seconds
       setTimeout(() => setSuccess(false), 5000);
     } catch (err) {
       toast.dismiss();
-      const errorMsg = err?.response?.data?.message || "Failed to send message. Please try again.";
+      const validationDetails = err?.response?.data?.data?.errors
+        ?.map((item) => `${item.field}: ${item.message}`)
+        .join(", ");
+      const errorMsg = validationDetails || err?.response?.data?.message || "Failed to send message. Please try again.";
       setError(errorMsg);
       toast.error(errorMsg);
     } finally {
@@ -82,11 +89,11 @@ export default function ContactSection() {
           <div className="mt-8 space-y-4">
             <div className="rounded-xl border border-red-100 bg-white p-4 shadow-sm transition hover:shadow-md">
               <p className="text-sm font-semibold text-slate-900">Emergency Helpline</p>
-              <p className="text-sm text-red-600 font-semibold">+880 1700 000000</p>
+              <p className="text-sm text-red-600 font-semibold">01775198524</p>
             </div>
             <div className="rounded-xl border border-red-100 bg-white p-4 shadow-sm transition hover:shadow-md">
               <p className="text-sm font-semibold text-slate-900">Support Email</p>
-              <p className="text-sm text-red-600 font-semibold">support@bloodconnect.org</p>
+              <p className="text-sm text-red-600 font-semibold">shahrierhossainbiddut@gmail.com</p>
             </div>
             <div className="rounded-xl border border-red-100 bg-white p-4 shadow-sm transition hover:shadow-md">
               <p className="text-sm font-semibold text-slate-900">Office</p>
@@ -138,6 +145,38 @@ export default function ContactSection() {
                 name="email"
                 placeholder="name@example.com"
                 value={form.email}
+                onChange={handleChange}
+                disabled={loading}
+                className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-red-400 focus:ring-2 focus:ring-red-100 transition disabled:bg-slate-100 disabled:cursor-not-allowed"
+              />
+            </div>
+
+            {/* Phone Field */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Phone Number
+              </label>
+              <input
+                type="tel"
+                name="phone"
+                placeholder="01775198524"
+                value={form.phone}
+                onChange={handleChange}
+                disabled={loading}
+                className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-red-400 focus:ring-2 focus:ring-red-100 transition disabled:bg-slate-100 disabled:cursor-not-allowed"
+              />
+            </div>
+
+            {/* Address Field */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Address
+              </label>
+              <input
+                type="text"
+                name="address"
+                placeholder="Your address or area"
+                value={form.address}
                 onChange={handleChange}
                 disabled={loading}
                 className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-red-400 focus:ring-2 focus:ring-red-100 transition disabled:bg-slate-100 disabled:cursor-not-allowed"

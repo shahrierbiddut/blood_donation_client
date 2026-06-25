@@ -13,14 +13,14 @@ const publicNavItems = [
   { label: "Home", href: "/" },
   { label: "Donation Requests", href: "/donation-requests" },
   { label: "Search Donors", href: "/search-donors" },
-  { label: "About Us", href: "/about-us" },
+  { label: "Funding", href: "/dashboard/funding" },
   { label: "Contact", href: "/contact" },
 ];
 
 const authNavItems = [
   { label: "Home", href: "/" },
   { label: "Donation Requests", href: "/donation-requests" },
-  { label: "About Us", href: "/about-us" },
+  { label: "Funding", href: "/dashboard/funding" },
   { label: "Contact", href: "/contact" },
 ];
 

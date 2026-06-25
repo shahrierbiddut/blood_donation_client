@@ -25,8 +25,6 @@ import { useAuth } from "@/context/AuthContext";
 import locationService from "@/services/locationService";
 import uploadService from "@/services/uploadService";
 import bannerImage from "../../../Assets/Blood.png";
-// import { toast, ToastContainer } from "react-toastify";
-// import "react-toastify/dist/ReactToastify.css";
 import { toast } from "react-hot-toast";
 
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
@@ -887,7 +885,6 @@ export default function RegisterPage() {
           </div>
         </section>
       </div>
-      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 }
