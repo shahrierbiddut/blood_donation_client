@@ -1,36 +1,120 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Blood Donation Platform — Client
 
-## Getting Started
+The Blood Donation Platform client is a polished, production-grade Next.js application designed to support blood donation coordination across donors, volunteers, administrators, and hospitals.
 
-First, run the development server:
+## Live deployments
+
+- Client: https://client-blood-donation.vercel.app/
+- API server: https://server-tan-three.vercel.app/
+
+## Repository links
+
+- Client repo: https://github.com/shahrierbiddut/blood_donation_client
+- Server repo: https://github.com/shahrierbiddut/blood_donation_server
+
+## System overview
+
+This client is the end-user interface for a role-based blood donation ecosystem. It is built to:
+
+- display urgent donation requests and available donors
+- support secure login for Donor, Volunteer, and Admin roles
+- enforce protected access for funding and dashboard pages
+- deliver a unified experience across desktop and mobile devices
+- enable fast interaction with backend APIs for donations, funding, and messaging
+
+## Core functionality
+
+### Public pages
+
+- Landing page with mission, statistics, and action links
+- Donation request browse page
+- Donor search page
+- About and contact pages
+
+### Authentication and roles
+
+- Email/password login and registration
+- Role-aware dashboard routing for `admin`, `volunteer`, and `donor`
+- Protected routes for authenticated dashboard access
+- Shared navigation that hides protected actions from public users
+
+### Dashboard and funding
+
+- Role-specific dashboards for workflow and data access
+- Funding page available only after login
+- Funding history, search, totals, and payment integration
+- Support for Stripe session creation and transaction tracking
+
+### Support and communications
+
+- Contact form integration with backend messaging
+- Contact support links visible on volunteer and public pages
+- Dashboard access to user-specific functions and messages
+
+## Demo credentials
+
+- Volunteer: `sadia@gmail.com` / `Test@12345`
+- Admin: `rahim@gmail.com` / `Test@12345`
+- Donor: `akashislam@gmail.com` / `Test@12345`
+
+## Technology stack
+
+- Next.js 16
+- React 19
+- Tailwind CSS 4
+- Axios for REST API requests
+- React Icons for iconography
+- Hero UI components for buttons and spinner elements
+- Recharts for dashboard analytics and reporting
+
+## Local development
 
 ```bash
+cd client
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then open `http://localhost:3000` in your browser.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## Environment configuration
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Create a `.env.local` file in the `client/` folder with the following values as needed:
 
-## Learn More
+```env
+NEXT_PUBLIC_API_URL=http://localhost:5000/api
+NEXT_PUBLIC_JWT_STORAGE_KEY=blood_donation_auth_token
+NEXT_PUBLIC_IMGBB_API_KEY=your_imgbb_api_key
+```
 
-To learn more about Next.js, take a look at the following resources:
+> `NEXT_PUBLIC_API_URL` should point to your server API endpoint.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `app/` — Next.js application routes and pages
+- `src/Components/` — shared UI components and dashboard modules
+- `src/context/` — authentication provider and custom hooks
+- `src/services/` — API client, auth service, and upload service
+- `src/data/` — mock data and admin demo data
 
-## Deploy on Vercel
+## Important implementation details
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `src/context/AuthContext.js` manages authentication state, login, logout, and token verification.
+- `src/services/api.js` adds JWT tokens to requests and refreshes expired tokens.
+- `src/Components/ProtectedRoute.js` enforces authentication for dashboard routes.
+- `src/Components/Shared/Navbar.js` changes navigation options based on auth state.
+- `app/dashboard/funding/page.js` loads funding history only for authenticated users.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Deployment notes
+
+- The client is deployed on Vercel and can be updated through the connected GitHub repository.
+- Ensure `NEXT_PUBLIC_API_URL` points to the production server URL in Vercel environment settings.
+- Keep staging and production credentials secure and do not expose them in source control.
+
+## Maintenance and contribution guidelines
+
+- Use consistent component patterns for shared UI elements and dashboard pages.
+- Add new backend endpoints through `src/services/api.js`.
+- Maintain route protection through `ProtectedRoute` for any secure view.
+- Use Tailwind utility classes and shared layout wrappers for consistent styling.
+- Document new features in this README and the server README as backend support is added.

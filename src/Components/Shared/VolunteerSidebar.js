@@ -46,12 +46,6 @@ export default function VolunteerSidebar() {
     router.push("/login");
   };
 
-  useEffect(() => {
-    if (user) {
-      setProfileData(getProfileFromUser(user));
-    }
-  }, [user]);
-
   const handleProfileUpdate = async () => {
     if (isAvatarProcessing) {
       setProfileError("Please wait, image is still processing.");
@@ -112,6 +106,7 @@ export default function VolunteerSidebar() {
   const navItems = [
     { path: "/dashboard/volunteer", label: "Dashboard", icon: FiHome },
     { path: "/dashboard/volunteer/all-requests", label: "All Blood Requests", icon: FiDroplet },
+    { path: "/dashboard/funding", label: "Funding", icon: FiHeart },
     { path: "/dashboard/volunteer/profile", label: "Profile", icon: FiUser },
     { path: "/dashboard/volunteer/settings", label: "Settings", icon: FiSettings }
   ];

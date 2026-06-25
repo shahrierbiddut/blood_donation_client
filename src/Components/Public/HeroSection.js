@@ -26,9 +26,24 @@ export default function HeroSection() {
 
           <div className="mt-8 flex min-h-11 flex-wrap gap-3">
             {loading ? null : isAuthenticated ? (
-              <Link href="/donation-requests">
-                <Button className="bg-red-600 px-7 font-semibold text-white">Explore Requests</Button>
-              </Link>
+              <>
+                <Link href="/donation-requests">
+                  <Button className="h-11 rounded-xl bg-red-600 px-7 font-semibold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-red-700">
+                    Explore Requests
+                  </Button>
+                </Link>
+                <Link href="/search-donors">
+                  <Button
+                    variant="bordered"
+                    className="h-11 rounded-xl border-red-300 bg-white px-7 font-semibold text-red-600 shadow-sm transition hover:-translate-y-0.5 hover:border-red-500 hover:bg-red-50"
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <FiSearch aria-hidden="true" className="text-base" />
+                      Search Donors
+                    </span>
+                  </Button>
+                </Link>
+              </>
             ) : (
               <>
                 <Link href="/register">
