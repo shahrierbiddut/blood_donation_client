@@ -13,7 +13,6 @@ const publicNavItems = [
   { label: "Home", href: "/" },
   { label: "Donation Requests", href: "/donation-requests" },
   { label: "Search Donors", href: "/search-donors" },
-  { label: "Funding", href: "/dashboard/funding" },
   { label: "Contact", href: "/contact" },
 ];
 

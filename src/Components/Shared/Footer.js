@@ -97,11 +97,11 @@ export default function Footer() {
             <ul className="mt-4 space-y-3 text-sm text-red-100/95">
               <li className="flex items-center gap-2">
                 <FiPhoneCall className="text-white" />
-                <span>+880 1234 567890</span>
+                <span>01775198524</span>
               </li>
               <li className="flex items-center gap-2">
                 <FiMail className="text-white" />
-                <span>info@blooddonor.com</span>
+                <span>shahrierhossainbiddut@gmail.com</span>
               </li>
               <li className="flex items-center gap-2">
                 <FiMapPin className="text-white" />
